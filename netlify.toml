@@ -1,0 +1,15 @@
+# Статика + API (Supabase через serverless).
+# Важно: деплой должен быть из КОРНЯ репозитория (есть netlify.toml и netlify/functions),
+# а не только из папки public — иначе /api/* даст 404.
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+  # Убедиться, что ставятся зависимости для функции (@supabase/supabase-js)
+  command = "npm install"
+
+# /api/tasks → /.netlify/functions/tasks (query ?day= сохраняется)
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+  force = true

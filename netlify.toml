@@ -1,0 +1,16 @@
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+
+# SPA fallback: let the client handle routes
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# API functions
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+

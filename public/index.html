@@ -1,0 +1,3758 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Таск‑менеджер</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #071410;
+        --panel: #0c1f18;
+        --text: #ecfdf5;
+        --muted: #94a89e;
+        --border: rgba(255, 255, 255, 0.1);
+        --accent: #34d399;
+        --accent-dim: rgba(52, 211, 153, 0.14);
+        --danger: #f87171;
+        --ok: #4ade80;
+      }
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Helvetica Neue",
+          sans-serif;
+        background: radial-gradient(1200px 600px at 20% 10%, rgba(52, 211, 153, 0.16), transparent 60%),
+          radial-gradient(900px 500px at 80% 0%, rgba(52, 211, 153, 0.1), transparent 55%),
+          var(--bg);
+        color: var(--text);
+      }
+      .wrap {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 28px 18px 40px;
+      }
+      header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: end;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+      .headRight {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+        justify-content: flex-end;
+      }
+      .viewSwitch {
+        display: inline-flex;
+        gap: 6px;
+      }
+      .profileSelect {
+        min-width: 220px;
+        padding: 9px 10px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: rgba(0, 0, 0, 0.25);
+        color: var(--text);
+        font: inherit;
+        outline: none;
+        cursor: pointer;
+      }
+      .profileSelect:focus {
+        border-color: rgba(52, 211, 153, 0.55);
+      }
+      h1 {
+        font-size: 20px;
+        margin: 0;
+        letter-spacing: 0.2px;
+      }
+      .sub {
+        color: var(--muted);
+        font-size: 13px;
+        margin-top: 6px;
+        line-height: 1.35;
+      }
+      .panel {
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        overflow: hidden;
+        backdrop-filter: blur(10px);
+      }
+      .toolbar {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--border);
+      }
+      .controls {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        width: 100%;
+      }
+      .toolbarRow {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        width: 100%;
+      }
+      .taskAddRow {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 10px;
+        align-items: stretch;
+        width: 100%;
+      }
+      @media (max-width: 520px) {
+        .taskAddRow {
+          grid-template-columns: 1fr;
+        }
+        .taskAddRow .btn {
+          width: 100%;
+        }
+      }
+      .taskInput {
+        width: 100%;
+        min-width: 0;
+      }
+      input[type="text"] {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: rgba(0, 0, 0, 0.22);
+        color: var(--text);
+        outline: none;
+        box-sizing: border-box;
+      }
+      input[type="date"] {
+        padding: 9px 10px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: rgba(0, 0, 0, 0.25);
+        color: var(--text);
+        outline: none;
+      }
+      input[type="text"]::placeholder {
+        color: rgba(236, 253, 245, 0.45);
+      }
+      input[type="text"]:focus,
+      input[type="date"]:focus,
+      textarea:focus {
+        border-color: rgba(52, 211, 153, 0.45);
+        box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.12);
+      }
+      .btn {
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: var(--accent-dim);
+        color: var(--text);
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .btn:hover {
+        border-color: rgba(52, 211, 153, 0.45);
+        background: rgba(52, 211, 153, 0.2);
+      }
+      .btnPrimary {
+        background: linear-gradient(180deg, rgba(52, 211, 153, 0.38), rgba(52, 211, 153, 0.22));
+        border-color: rgba(52, 211, 153, 0.45);
+        font-weight: 600;
+      }
+      .btnPrimary:hover {
+        border-color: rgba(52, 211, 153, 0.65);
+        background: linear-gradient(180deg, rgba(52, 211, 153, 0.48), rgba(52, 211, 153, 0.28));
+      }
+      .btnSecondary {
+        background: rgba(255, 255, 255, 0.06);
+      }
+      .meta {
+        color: var(--muted);
+        font-size: 13px;
+        white-space: nowrap;
+      }
+      .content {
+        padding: 10px 14px 14px;
+      }
+      .list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: 8px;
+      }
+      .doneSectionLabel {
+        display: none;
+        margin: 14px 0 8px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .doneSectionLabel.isVisible {
+        display: block;
+      }
+      .taskProfileBlock {
+        margin-top: 16px;
+      }
+      .taskProfileBlock:first-child {
+        margin-top: 0;
+      }
+      .taskProfileBlockHead {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text);
+        margin: 0 0 10px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid var(--border);
+        letter-spacing: 0.02em;
+      }
+      .item {
+        display: grid;
+        grid-template-columns: 28px 1fr;
+        gap: 10px;
+        align-items: start;
+        padding: 10px 10px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: rgba(0, 0, 0, 0.15);
+      }
+      .check {
+        margin-top: 2px;
+        width: 18px;
+        height: 18px;
+        accent-color: var(--accent);
+      }
+      .text {
+        line-height: 1.35;
+        word-break: break-word;
+      }
+      .done .text {
+        text-decoration: line-through;
+        text-decoration-thickness: 2px;
+        text-decoration-color: rgba(234, 240, 255, 0.55);
+        color: rgba(234, 240, 255, 0.70);
+      }
+      .taskOwner {
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: 4px;
+      }
+      .taskComment {
+        margin-top: 8px;
+        padding: 8px 10px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.04);
+        color: rgba(234, 240, 255, 0.85);
+        font-size: 13px;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      .empty {
+        color: var(--muted);
+        padding: 10px 2px 0;
+      }
+      .hint {
+        color: var(--muted);
+        font-size: 12px;
+        padding: 10px 14px 14px;
+        border-top: 1px solid var(--border);
+      }
+      .paymentsPanel {
+        margin-top: 16px;
+      }
+      .paymentsGrid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+      }
+      .paymentsColumn {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: rgba(0, 0, 0, 0.14);
+        padding: 10px;
+      }
+      .paymentsColumnTitle {
+        margin: 0 0 8px;
+        font-size: 13px;
+        color: var(--text);
+      }
+      .paymentsList {
+        margin: 0;
+        padding-left: 20px;
+        display: grid;
+        gap: 8px;
+      }
+      .paymentItem {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 8px;
+        background: rgba(255, 255, 255, 0.04);
+      }
+      .paymentItemPaid {
+        border-color: rgba(52, 211, 153, 0.55);
+        background: rgba(52, 211, 153, 0.12);
+      }
+      .paymentItemClosed {
+        border-color: rgba(52, 211, 153, 0.35);
+        background: rgba(52, 211, 153, 0.07);
+      }
+      .paymentItemOverdue {
+        border-color: rgba(255, 107, 107, 0.7) !important;
+        background: rgba(255, 107, 107, 0.12) !important;
+        box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.12);
+      }
+      .paymentCompany {
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .paymentMeta {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .paymentOwner {
+        margin-top: 4px;
+        font-size: 11px;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+      .paymentActions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 8px;
+      }
+      .paymentsColumnAnalytics {
+        margin-top: 10px;
+        padding-top: 8px;
+        border-top: 1px dashed var(--border);
+        display: grid;
+        gap: 4px;
+      }
+      .paymentsColumnAnalyticsRow {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .paymentsColumnAnalyticsRow strong {
+        color: var(--text);
+      }
+      .paymentsEmpty {
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .paymentsAnalytics {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      .paymentsKpi {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 8px 10px;
+        background: rgba(255, 255, 255, 0.03);
+      }
+      .paymentsKpiLabel {
+        font-size: 11px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .paymentsKpiValue {
+        margin-top: 4px;
+        font-weight: 600;
+      }
+      .paymentsFilterRow {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .paymentsMultiWrap {
+        position: relative;
+      }
+      .paymentsMultiBtn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .paymentsMultiMenu {
+        position: absolute;
+        right: 0;
+        top: calc(100% + 6px);
+        width: min(320px, 92vw);
+        max-height: 320px;
+        overflow: auto;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(10px);
+        padding: 10px;
+        display: none;
+        z-index: 60;
+      }
+      .paymentsMultiMenu.open {
+        display: block;
+      }
+      .paymentsMultiItem {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 8px;
+        border-radius: 10px;
+      }
+      .paymentsMultiItem:hover {
+        background: rgba(255, 255, 255, 0.06);
+      }
+      .paymentsMultiItem input {
+        width: 16px;
+        height: 16px;
+        accent-color: var(--accent);
+      }
+      .paymentsMultiName {
+        font-size: 13px;
+        color: var(--text);
+        line-height: 1.25;
+      }
+      .paymentsFormRow {
+        display: grid;
+        grid-template-columns: 0.9fr 1.2fr 0.9fr 0.9fr auto;
+        gap: 10px;
+        align-items: end;
+      }
+      .paymentsFormRow select {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: rgba(0, 0, 0, 0.22);
+        color: var(--text);
+        outline: none;
+      }
+      @media (max-width: 900px) {
+        .paymentsGrid {
+          grid-template-columns: 1fr;
+        }
+        .paymentsAnalytics {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+      @media (max-width: 760px) {
+        .paymentsFilterRow {
+          width: 100%;
+          justify-content: space-between;
+        }
+        .paymentsFormRow {
+          grid-template-columns: 1fr;
+        }
+        .paymentsFormRow .btn {
+          width: 100%;
+        }
+      }
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+        text-decoration-color: var(--accent);
+      }
+      .danger {
+        border-color: rgba(255, 107, 107, 0.35);
+        background: rgba(255, 107, 107, 0.08);
+      }
+      .danger:hover {
+        border-color: rgba(255, 107, 107, 0.6);
+      }
+      .modal {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.55);
+        padding: 18px;
+        z-index: 50;
+      }
+      .modal.open {
+        display: flex;
+      }
+      .modalCard {
+        width: min(400px, 100%);
+        max-height: min(86vh, 720px);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.03));
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        backdrop-filter: blur(10px);
+        color: var(--text);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .modalCardWide {
+        width: min(520px, 100%);
+      }
+      .taskActions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 8px;
+      }
+      .taskOverdueTag {
+        color: rgba(255, 107, 107, 0.95);
+        font-weight: 700;
+        font-size: 12px;
+        align-self: center;
+      }
+      .btnSm {
+        padding: 5px 10px;
+        font-size: 12px;
+        border-radius: 8px;
+      }
+      .modalHead {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border);
+        font-size: 14px;
+        color: rgba(234, 240, 255, 0.85);
+      }
+      .modalBody {
+        padding: 16px;
+        display: grid;
+        gap: 10px;
+        overflow: auto;
+        min-height: 0;
+      }
+      .modalBody label {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .modalBody .meta {
+        white-space: normal;
+        word-break: break-word;
+      }
+      input[type="password"] {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: rgba(0, 0, 0, 0.25);
+        color: var(--text);
+        outline: none;
+        box-sizing: border-box;
+      }
+      textarea {
+        width: 100%;
+        min-height: 92px;
+        resize: vertical;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: rgba(0, 0, 0, 0.25);
+        color: var(--text);
+        outline: none;
+        box-sizing: border-box;
+      }
+      .input {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: rgba(0, 0, 0, 0.25);
+        color: var(--text);
+        outline: none;
+        box-sizing: border-box;
+      }
+      select.input {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+      }
+      .inputSm {
+        padding: 6px 8px;
+        font-size: 12px;
+        border-radius: 8px;
+      }
+      .modalActions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: flex-end;
+        padding: 0 16px 16px;
+      }
+      @media (max-width: 360px) {
+        .modal {
+          padding: 10px;
+        }
+        .modalHead {
+          padding: 12px;
+        }
+        .modalBody {
+          padding: 12px;
+        }
+        .modalActions {
+          padding: 0 12px 12px;
+          justify-content: stretch;
+        }
+        .modalActions .btn {
+          width: 100%;
+          min-height: 42px;
+        }
+      }
+      .modalErr {
+        color: var(--danger);
+        font-size: 13px;
+        min-height: 1.2em;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div>
+          <h1>Таск‑менеджер <span id="activeModuleLabel" class="meta">/ Задачи</span></h1>
+          <div class="sub">
+            Добавьте задачу текстом. После создания появится чекбокс — отметьте его, и задача закроется (текст станет
+            зачёркнутым).
+          </div>
+        </div>
+        <div class="headRight">
+          <div class="viewSwitch">
+            <button class="btn btnSecondary" id="goTasks" type="button">Задачи</button>
+            <button class="btn btnSecondary" id="goPayments" type="button">Платежи</button>
+            <button class="btn btnSecondary" id="goInvoices" type="button">Отложенные счета</button>
+          </div>
+          <label class="meta" for="profileSelect">Профиль</label>
+          <select id="profileSelect" class="profileSelect" aria-label="Выбор профиля">
+            <option value="">Выберите профиль…</option>
+          </select>
+          <div class="meta" id="meta">—</div>
+        </div>
+      </header>
+
+      <div class="panel" id="tasksPanel">
+        <div class="toolbar">
+          <form id="form" class="controls" autocomplete="off">
+            <div class="toolbarRow">
+              <input id="day" type="date" />
+              <button class="btn btnSecondary" id="today" type="button" title="Перейти на сегодняшнюю дату">Сегодня</button>
+              <button class="btn btnSecondary danger" id="clearDone" type="button" title="Удалить закрытые задачи">
+                Очистить закрытые
+              </button>
+              <div class="paymentsFilterRow paymentsMultiWrap" id="tasksProfilesFilterWrap" style="display:none">
+                <span class="meta">Профили</span>
+                <button class="btn btnSecondary btnSm paymentsMultiBtn" type="button" id="tasksProfilesBtn">
+                  <span id="tasksProfilesBtnText">Все</span>
+                </button>
+                <div class="paymentsMultiMenu" id="tasksProfilesMenu" role="menu" aria-label="Фильтр задач по профилям">
+                  <div id="tasksProfilesMenuItems"></div>
+                </div>
+              </div>
+              <div class="meta" id="count">—</div>
+            </div>
+            <div class="toolbarRow taskAddRow">
+              <input
+                id="taskText"
+                class="taskInput"
+                type="text"
+                placeholder="Например: Подготовить отчёт за неделю"
+              />
+              <select id="taskAssignee" class="input inputSm" style="display:none" aria-label="Кому поставить задачу"></select>
+              <button class="btn btnPrimary" type="submit">Добавить</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="content">
+          <div id="openTasksRoot"></div>
+          <div class="doneSectionLabel" id="doneLabel" aria-hidden="true">Выполнено</div>
+          <div id="doneTasksRoot"></div>
+          <div class="empty" id="empty" style="display:none">Пока нет задач. Добавьте первую задачу выше.</div>
+        </div>
+
+        <!-- hint removed -->
+      </div>
+
+      <div class="panel paymentsPanel" id="paymentsPanel">
+        <div class="toolbar">
+          <form id="paymentsForm" class="controls" autocomplete="off">
+            <div class="toolbarRow">
+              <div class="meta">Раздел: Потанцевальные платежи</div>
+              <div class="meta" id="paymentsModeMeta">Режим: —</div>
+              <div class="paymentsFilterRow">
+                <label class="meta" for="paymentsMonthFilter">Месяц</label>
+                <select id="paymentsMonthFilter" aria-label="Фильтр по месяцу">
+                  <option value="all">Все месяцы</option>
+                  <option value="01">Январь</option>
+                  <option value="02">Февраль</option>
+                  <option value="03">Март</option>
+                  <option value="04">Апрель</option>
+                  <option value="05">Май</option>
+                  <option value="06">Июнь</option>
+                  <option value="07">Июль</option>
+                  <option value="08">Август</option>
+                  <option value="09">Сентябрь</option>
+                  <option value="10">Октябрь</option>
+                  <option value="11">Ноябрь</option>
+                  <option value="12">Декабрь</option>
+                </select>
+              </div>
+              <div class="paymentsFilterRow paymentsMultiWrap" id="paymentsProfilesFilterWrap" style="display:none">
+                <span class="meta">Профили</span>
+                <button class="btn btnSecondary btnSm paymentsMultiBtn" type="button" id="paymentsProfilesBtn">
+                  <span id="paymentsProfilesBtnText">Все</span>
+                </button>
+                <div class="paymentsMultiMenu" id="paymentsProfilesMenu" role="menu" aria-label="Фильтр по профилям">
+                  <div id="paymentsProfilesMenuItems"></div>
+                </div>
+              </div>
+            </div>
+            <div class="paymentsFormRow">
+              <select id="paymentSection" aria-label="Раздел платежа">
+                <option value="implementation">Внедрение</option>
+                <option value="widgets">Виджеты</option>
+                <option value="license">Лицензия</option>
+              </select>
+              <input id="paymentCompany" type="text" placeholder="Название компании" />
+              <input id="paymentAmount" type="text" placeholder="Сумма оплаты" />
+              <input id="paymentDate" type="text" placeholder="ДД.ММ" inputmode="numeric" maxlength="5" />
+              <button class="btn btnPrimary" type="submit">Добавить позицию</button>
+            </div>
+            <div id="paymentFormErr" class="modalErr" aria-live="polite"></div>
+          </form>
+        </div>
+        <div class="content">
+          <div id="paymentsAnalytics" class="paymentsAnalytics"></div>
+          <div id="paymentsEmpty" class="paymentsEmpty" style="display:none">Пока нет позиций.</div>
+          <div id="paymentsRoot" class="paymentsGrid"></div>
+        </div>
+      </div>
+
+      <div class="panel paymentsPanel" id="invoicesPanel">
+        <div class="toolbar">
+          <form id="invoicesForm" class="controls" autocomplete="off">
+            <div class="toolbarRow">
+              <div class="meta">Раздел: Отложенные счета</div>
+              <div class="meta" id="invoicesModeMeta">Режим: —</div>
+              <div class="paymentsFilterRow paymentsMultiWrap" id="invoicesProfilesFilterWrap" style="display:none">
+                <span class="meta">Профили</span>
+                <button class="btn btnSecondary btnSm paymentsMultiBtn" type="button" id="invoicesProfilesBtn">
+                  <span id="invoicesProfilesBtnText">Все</span>
+                </button>
+                <div class="paymentsMultiMenu" id="invoicesProfilesMenu" role="menu" aria-label="Фильтр по профилям">
+                  <div id="invoicesProfilesMenuItems"></div>
+                </div>
+              </div>
+            </div>
+            <div class="paymentsFormRow">
+              <select id="invoiceSection" aria-label="Раздел счёта">
+                <option value="implementation">Внедрение</option>
+                <option value="widgets">Виджеты</option>
+                <option value="license">Лицензия</option>
+              </select>
+              <input id="invoiceCompany" type="text" placeholder="Название компании" />
+              <input id="invoiceAmount" type="text" placeholder="Сумма" />
+              <input id="invoiceDate" type="text" placeholder="ДД.ММ.ГГ" inputmode="numeric" maxlength="8" />
+              <button class="btn btnPrimary" type="submit">Добавить позицию</button>
+            </div>
+            <div id="invoiceFormErr" class="modalErr" aria-live="polite"></div>
+          </form>
+        </div>
+        <div class="content">
+          <div id="invoicesAnalytics" class="paymentsAnalytics"></div>
+          <div id="invoicesEmpty" class="paymentsEmpty" style="display:none">Пока нет позиций.</div>
+          <div id="invoicesRoot" class="paymentsGrid"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="passwordModal" class="modal" aria-hidden="true">
+      <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="pwdTitle">
+        <div class="modalHead" id="pwdTitle">Вход в профиль</div>
+        <div class="modalBody">
+          <div id="pwdProfileName" class="meta"></div>
+          <div>
+            <label for="profilePassword">Пароль</label>
+            <input id="profilePassword" type="password" autocomplete="current-password" />
+          </div>
+          <div id="pwdErr" class="modalErr" aria-live="polite"></div>
+        </div>
+        <div class="modalActions">
+          <button class="btn btnSecondary" type="button" id="pwdCancel">Отмена</button>
+          <button class="btn" type="button" id="pwdOk">Войти</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="commentModal" class="modal" aria-hidden="true">
+      <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="cmtTitle">
+        <div class="modalHead" id="cmtTitle">Комментарий к выполнению</div>
+        <div class="modalBody">
+          <div class="meta">Чтобы закрыть задачу, заполните комментарий (минимум 2 символа).</div>
+          <div>
+            <label for="taskCommentInput">Комментарий</label>
+            <textarea id="taskCommentInput" placeholder="Например: Сделано, отчёт отправлен в чат отдела"></textarea>
+          </div>
+          <div id="cmtErr" class="modalErr" aria-live="polite"></div>
+        </div>
+        <div class="modalActions">
+          <button class="btn btnSecondary" type="button" id="cmtCancel">Отмена</button>
+          <button class="btn" type="button" id="cmtOk">Закрыть задачу</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="editTaskModal" class="modal" aria-hidden="true">
+      <div class="modalCard modalCardWide" role="dialog" aria-modal="true" aria-labelledby="editTaskTitle">
+        <div class="modalHead" id="editTaskTitle">Редактирование задачи</div>
+        <div class="modalBody">
+          <div>
+            <label for="editTaskTextInput">Текст задачи</label>
+            <textarea id="editTaskTextInput" rows="3" placeholder="Описание задачи"></textarea>
+          </div>
+          <div id="editResultWrap" style="display: none">
+            <label for="editTaskResultInput">Комментарий (результат)</label>
+            <textarea id="editTaskResultInput" rows="3" placeholder="Итог выполнения"></textarea>
+          </div>
+          <div id="editTaskErr" class="modalErr" aria-live="polite"></div>
+        </div>
+        <div class="modalActions">
+          <button class="btn btnSecondary danger" type="button" id="editTaskDelete">Удалить</button>
+          <button class="btn btnSecondary" type="button" id="editTaskCancel">Отмена</button>
+          <button class="btn" type="button" id="editTaskSave">Сохранить</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="editPaymentModal" class="modal" aria-hidden="true">
+      <div class="modalCard modalCardWide" role="dialog" aria-modal="true" aria-labelledby="editPaymentTitle">
+        <div class="modalHead" id="editPaymentTitle">Редактирование позиции платежа</div>
+        <div class="modalBody">
+          <div>
+            <label for="editPaymentSection">Раздел</label>
+            <select id="editPaymentSection" aria-label="Раздел платежа">
+              <option value="implementation">Внедрение</option>
+              <option value="widgets">Виджеты</option>
+              <option value="license">Лицензия</option>
+            </select>
+          </div>
+          <div>
+            <label for="editPaymentCompany">Название компании</label>
+            <input id="editPaymentCompany" type="text" placeholder="Название компании" />
+          </div>
+          <div>
+            <label for="editPaymentAmount">Сумма оплаты</label>
+            <input id="editPaymentAmount" type="text" placeholder="1 234 567 ₽" />
+          </div>
+          <div>
+            <label for="editPaymentDate">Примерная дата платежа</label>
+            <input id="editPaymentDate" type="date" />
+          </div>
+          <div id="editPaymentErr" class="modalErr" aria-live="polite"></div>
+        </div>
+        <div class="modalActions">
+          <button class="btn btnSecondary danger" type="button" id="editPaymentDelete">Удалить</button>
+          <button class="btn btnSecondary" type="button" id="editPaymentCancel">Отмена</button>
+          <button class="btn" type="button" id="editPaymentSave">Сохранить</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="editInvoiceModal" class="modal" aria-hidden="true">
+      <div class="modalCard modalCardWide" role="dialog" aria-modal="true" aria-labelledby="editInvoiceTitle">
+        <div class="modalHead" id="editInvoiceTitle">Редактирование отложенного счёта</div>
+        <div class="modalBody">
+          <div>
+            <label for="editInvoiceSection">Раздел</label>
+            <select id="editInvoiceSection" aria-label="Раздел счёта">
+              <option value="implementation">Внедрение</option>
+              <option value="widgets">Виджеты</option>
+              <option value="license">Лицензия</option>
+            </select>
+          </div>
+          <div>
+            <label for="editInvoiceCompany">Название компании</label>
+            <input id="editInvoiceCompany" type="text" placeholder="Название компании" />
+          </div>
+          <div>
+            <label for="editInvoiceAmount">Сумма</label>
+            <input id="editInvoiceAmount" type="text" placeholder="1 234 567 ₽" />
+          </div>
+          <div>
+            <label for="editInvoiceDate">Дата (ДД.ММ.ГГ)</label>
+            <input id="editInvoiceDate" type="text" placeholder="ДД.ММ.ГГ" inputmode="numeric" maxlength="8" />
+          </div>
+          <div id="editInvoiceErr" class="modalErr" aria-live="polite"></div>
+        </div>
+        <div class="modalActions">
+          <button class="btn btnSecondary danger" type="button" id="editInvoiceDelete">Удалить</button>
+          <button class="btn btnSecondary" type="button" id="editInvoiceCancel">Отмена</button>
+          <button class="btn" type="button" id="editInvoiceSave">Сохранить</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+
+      const STORAGE_KEY_LEGACY = "team_tasks_v1";
+      const STORAGE_ACTIVE_PROFILE = "team_tasks_active_profile_v1";
+      const STORAGE_ACTIVE_VIEW = "team_active_view_v1";
+      const STORAGE_TASKS_PROFILES_FILTER = "team_tasks_profiles_filter_v1";
+      const STORAGE_PAYMENTS_PROFILES_FILTER = "team_payments_profiles_filter_v1";
+      const STORAGE_INVOICES_PROFILES_FILTER = "team_invoices_profiles_filter_v1";
+      const STORAGE_TASK_ASSIGNEE = "team_task_assignee_v1";
+      const PAYMENT_SECTIONS = [
+        { id: "implementation", name: "Внедрение" },
+        { id: "widgets", name: "Виджеты" },
+        { id: "license", name: "Лицензия" },
+      ];
+
+      const PROFILES = [
+        { id: "rymbaev", name: "Рымбаев Иван", password: "Rymbaev" },
+        { id: "sergeev", name: "Артемий Сергеев", password: "12345" },
+        { id: "fedorova", name: "Федорова Дарья", password: "67890" },
+        { id: "morskova", name: "Морскова Виктория", password: "09876" },
+      ];
+
+      /** Главный профиль: видит задачи всех сотрудников */
+      const MAIN_PROFILE_ID = "rymbaev";
+
+      function isMainProfile(profileId) {
+        return profileId === MAIN_PROFILE_ID;
+      }
+
+      function profilesMainFirst() {
+        const main = PROFILES.find((p) => p.id === MAIN_PROFILE_ID);
+        const rest = PROFILES.filter((p) => p.id !== MAIN_PROFILE_ID);
+        return main ? [main, ...rest] : PROFILES.slice();
+      }
+
+      /** true = данные с Netlify + Supabase; false = только localStorage (офлайн / run.ps1) */
+      let useRemote = false;
+      /** Показывать предупреждение в шапке, если облако недоступно, а локальный fallback отключён */
+      let remoteSyncWarning = false;
+      /** UI-флаг: сейчас идёт загрузка задач из облака */
+      let isRemoteLoading = false;
+      /** UI-флаг: сейчас идёт загрузка платежей из облака */
+      let isPaymentsLoading = false;
+      /** UI-флаг: сейчас идёт загрузка отложенных счетов из облака */
+      let isInvoicesLoading = false;
+      /** Отмена предыдущего запроса задач, чтобы смена профиля/дня была быстрой */
+      let remoteAbort = null;
+      /** Отмена предыдущего запроса платежей */
+      let paymentsAbort = null;
+      /** Отмена предыдущего запроса отложенных счетов */
+      let invoicesAbort = null;
+
+      // предотвращает "откат" флагов из-за фонового refresh после клика
+      const paymentsPendingFlags = new Map(); // id -> { paid, upd, updInvoiceId, ts }
+
+      /** Локальный fallback при ошибке API только на dev (run.ps1 / localhost). На проде не уходим в «ложный» локальный режим из‑за сетевого сбоя. */
+      function preferLocalStorageFallback() {
+        const h = location.hostname;
+        return h === "localhost" || h === "127.0.0.1" || h === "";
+      }
+
+      const API_FETCH_INIT = { cache: "no-store" };
+      let lastRemoteRolloverTarget = "";
+
+      function addDaysYmd(ymd, days) {
+        const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(ymd || ""));
+        if (!m) return ymd;
+        const dt = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+        dt.setUTCDate(dt.getUTCDate() + Number(days || 0));
+        const y = String(dt.getUTCFullYear());
+        const mo = String(dt.getUTCMonth() + 1).padStart(2, "0");
+        const d = String(dt.getUTCDate()).padStart(2, "0");
+        return `${y}-${mo}-${d}`;
+      }
+
+      function getMoscowNowParts() {
+        const dtf = new Intl.DateTimeFormat("en-CA", {
+          timeZone: "Europe/Moscow",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        });
+        const parts = dtf.formatToParts(new Date());
+        const map = {};
+        for (const p of parts) {
+          if (p.type !== "literal") map[p.type] = p.value;
+        }
+        return {
+          ymd: `${map.year}-${map.month}-${map.day}`,
+          hour: Number(map.hour || 0),
+        };
+      }
+
+      /** Бизнес-дата по МСК: после 18:00 считаем уже следующий день. */
+      function getMoscowEffectiveDayYmd() {
+        const p = getMoscowNowParts();
+        return p.hour >= 18 ? addDaysYmd(p.ymd, 1) : p.ymd;
+      }
+
+      function applyRolloverToTaskList(list, targetDay) {
+        let changed = false;
+        for (const t of list) {
+          if (!t.done && typeof t.day === "string" && t.day < targetDay) {
+            t.day = targetDay;
+            changed = true;
+          }
+        }
+        return changed;
+      }
+
+      function ensureLocalRolloverApplied() {
+        const targetDay = getMoscowEffectiveDayYmd();
+        let hasChanges = false;
+        for (const p of PROFILES) {
+          const list = loadTasksForProfile(p.id);
+          if (!list.length) continue;
+          if (applyRolloverToTaskList(list, targetDay)) {
+            saveTasksToProfile(p.id, list);
+            hasChanges = true;
+          }
+        }
+        if (hasChanges && state.profileId) {
+          state.tasks = loadTasksForView(state.profileId);
+        }
+      }
+
+      async function ensureRemoteRolloverApplied(signal) {
+        const targetDay = getMoscowEffectiveDayYmd();
+        if (lastRemoteRolloverTarget === targetDay) return;
+        const r = await fetch("/api/tasks", {
+          ...API_FETCH_INIT,
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ rolloverOpen: true, targetDay }),
+          signal,
+        });
+        if (!r.ok) throw new Error("rollover");
+        lastRemoteRolloverTarget = targetDay;
+      }
+
+      function mapRowsToView(profileId, rows) {
+        const base = (rows || []).map((r) => ({
+          id: r.id,
+          ownerId: r.owner_profile_id,
+          creatorId: r.creator_profile_id || "",
+          text: r.text,
+          day: r.day,
+          done: r.done,
+          createdAt: r.created_at,
+          doneAt: r.done_at,
+          doneComment: r.done_comment || "",
+        }));
+        if (!profileId) return [];
+        if (isMainProfile(profileId)) return base;
+        return base.filter((t) => t.ownerId === profileId);
+      }
+
+      async function refreshTasksFromRemote() {
+        if (!state.profileId) {
+          isRemoteLoading = false;
+          updateMeta();
+          return;
+        }
+        remoteSyncWarning = false;
+        isRemoteLoading = true;
+        updateMeta();
+
+        try {
+          if (remoteAbort) remoteAbort.abort();
+        } catch {}
+        remoteAbort = typeof AbortController !== "undefined" ? new AbortController() : null;
+        const signal = remoteAbort ? remoteAbort.signal : undefined;
+
+        for (let attempt = 0; attempt < 3; attempt++) {
+          if (attempt > 0) {
+            await new Promise((r) => setTimeout(r, 160 * attempt));
+          }
+          try {
+            await ensureRemoteRolloverApplied(signal);
+            const r = await fetch("/api/tasks?day=" + encodeURIComponent(state.selectedDay), {
+              ...API_FETCH_INIT,
+              signal,
+            });
+            if (!r.ok) throw new Error("api");
+            const data = await r.json();
+            useRemote = true;
+            state.tasks = mapRowsToView(state.profileId, data.tasks);
+            render();
+            isRemoteLoading = false;
+            updateMeta();
+            return;
+          } catch {
+            /* retry */
+          }
+        }
+        if (preferLocalStorageFallback()) {
+          useRemote = false;
+          ensureLocalRolloverApplied();
+          state.tasks = loadTasksForView(state.profileId);
+        } else {
+          useRemote = true;
+          remoteSyncWarning = true;
+        }
+        render();
+        isRemoteLoading = false;
+        updateMeta();
+      }
+
+      function tasksStorageKey(profileId) {
+        return `team_tasks_v1__${profileId}`;
+      }
+      function dayStorageKey(profileId) {
+        return `team_tasks_selected_day_v1__${profileId}`;
+      }
+      function paymentsStorageKey(profileId) {
+        return `team_payments_v1__${profileId}`;
+      }
+      function invoicesStorageKey(profileId) {
+        return `team_invoices_v1__${profileId}`;
+      }
+
+      function nowIso() {
+        return new Date().toISOString();
+      }
+
+      function formatAmountRub(input) {
+        const digits = String(input || "").replace(/[^\d]/g, "");
+        if (!digits) return "";
+        const normalized = digits.replace(/^0+/, "") || "0";
+        const withSpaces = normalized.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+        return `${withSpaces} ₽`;
+      }
+
+      function applyAmountMaskOnInput(inputEl) {
+        if (!inputEl) return;
+        const prev = String(inputEl.value || "");
+        const prevDigitsLen = prev.replace(/[^\d]/g, "").length;
+        const caretPos = Number(inputEl.selectionStart || 0);
+        const leftDigits = prev.slice(0, caretPos).replace(/[^\d]/g, "").length;
+        const next = formatAmountRub(prev);
+        inputEl.value = next;
+        const targetDigits = Math.min(leftDigits, prevDigitsLen);
+        let seen = 0;
+        let nextCaret = next.length;
+        for (let i = 0; i < next.length; i++) {
+          if (/\d/.test(next[i])) seen++;
+          if (seen >= targetDigits) {
+            nextCaret = i + 1;
+            break;
+          }
+        }
+        try {
+          inputEl.setSelectionRange(nextCaret, nextCaret);
+        } catch {}
+      }
+
+      function todayYmd() {
+        const d = new Date();
+        const y = String(d.getFullYear());
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${y}-${m}-${day}`;
+      }
+
+      function ymdFromIso(iso) {
+        const s = String(iso || "");
+        const m = /^(\d{4}-\d{2}-\d{2})/.exec(s);
+        return m ? m[1] : "";
+      }
+
+      function isTaskOverdueByRollover(t) {
+        if (!t || t.done) return false;
+        const createdYmd = ymdFromIso(t.createdAt);
+        return Boolean(createdYmd && typeof t.day === "string" && createdYmd < t.day);
+      }
+
+      function safeJsonParse(s, fallback) {
+        try {
+          return JSON.parse(s);
+        } catch {
+          return fallback;
+        }
+      }
+
+      const __memStore = new Map();
+      let storageWarningShown = false;
+      function storageGet(key) {
+        try {
+          return localStorage.getItem(key);
+        } catch {
+          if (!storageWarningShown) {
+            storageWarningShown = true;
+            try {
+              $("metaMode").textContent = "Внимание: браузер блокирует localStorage — часть функций может работать нестабильно.";
+            } catch {}
+          }
+          return __memStore.has(key) ? __memStore.get(key) : null;
+        }
+      }
+      function storageSet(key, value) {
+        try {
+          localStorage.setItem(key, value);
+        } catch {
+          __memStore.set(key, String(value));
+        }
+      }
+
+      function migrateLegacyTasksIfNeeded() {
+        const legacy = storageGet(STORAGE_KEY_LEGACY);
+        if (!legacy) return;
+        const targetKey = tasksStorageKey("sergeev");
+        if (storageGet(targetKey)) {
+          return;
+        }
+        storageSet(targetKey, legacy);
+      }
+
+      function loadTasksForProfile(profileId) {
+        if (!profileId) return [];
+        migrateLegacyTasksIfNeeded();
+        const raw = storageGet(tasksStorageKey(profileId));
+        const data = safeJsonParse(raw, null);
+        const tasks = Array.isArray(data) ? data : [];
+        return tasks
+          .filter((t) => t && typeof t === "object")
+          .map((t) => ({
+            id: String(t.id || crypto.randomUUID()),
+            text: String(t.text || "").trim(),
+            done: Boolean(t.done),
+            day: String(t.day || String(t.createdAt || nowIso()).slice(0, 10) || todayYmd()),
+            createdAt: String(t.createdAt || nowIso()),
+            doneAt: t.doneAt ? String(t.doneAt) : null,
+            doneComment: typeof t.doneComment === "string" ? t.doneComment : "",
+            creatorId: typeof t.creatorId === "string" ? t.creatorId : "",
+          }))
+          .filter((t) => t.text.length > 0);
+      }
+      function paymentToStored(p) {
+        return {
+          id: p.id,
+          section: p.section,
+          companyName: p.companyName,
+          amount: p.amount,
+          paymentDate: p.paymentDate,
+          paid: Boolean(p.paid),
+          upd: Boolean(p.upd),
+          updInvoiceId: p.updInvoiceId || "",
+          createdAt: p.createdAt,
+        };
+      }
+      function invoiceToStored(x) {
+        return {
+          id: x.id,
+          section: x.section,
+          companyName: x.companyName,
+          amount: x.amount,
+          invoiceDate: x.invoiceDate,
+          paid: Boolean(x.paid),
+          createdAt: x.createdAt,
+        };
+      }
+      function loadPaymentsForProfile(profileId) {
+        if (!profileId) return [];
+        const raw = storageGet(paymentsStorageKey(profileId));
+        const data = safeJsonParse(raw, null);
+        const list = Array.isArray(data) ? data : [];
+        return list
+          .filter((x) => x && typeof x === "object")
+          .map((x) => ({
+            id: String(x.id || crypto.randomUUID()),
+            section: PAYMENT_SECTIONS.some((s) => s.id === x.section) ? x.section : "implementation",
+            companyName: String(x.companyName || "").trim(),
+            amount: String(x.amount || "").trim(),
+            paymentDate: String(x.paymentDate || ""),
+            paid: Boolean(x.paid),
+            upd: Boolean(x.upd),
+            updInvoiceId: typeof x.updInvoiceId === "string" ? x.updInvoiceId : "",
+            createdAt: String(x.createdAt || nowIso()),
+          }))
+          .filter((x) => x.companyName.length > 0);
+      }
+      function loadInvoicesForProfile(profileId) {
+        if (!profileId) return [];
+        const raw = storageGet(invoicesStorageKey(profileId));
+        const data = safeJsonParse(raw, null);
+        const list = Array.isArray(data) ? data : [];
+        return list
+          .filter((x) => x && typeof x === "object")
+          .map((x) => ({
+            id: String(x.id || crypto.randomUUID()),
+            section: PAYMENT_SECTIONS.some((s) => s.id === x.section) ? x.section : "implementation",
+            companyName: String(x.companyName || "").trim(),
+            amount: String(x.amount || "").trim(),
+            invoiceDate: String(x.invoiceDate || "").trim(),
+            paid: Boolean(x.paid),
+            createdAt: String(x.createdAt || nowIso()),
+          }))
+          .filter((x) => x.companyName.length > 0);
+      }
+      function savePaymentsToProfile(profileId, list) {
+        if (!profileId) return;
+        storageSet(paymentsStorageKey(profileId), JSON.stringify(list.map(paymentToStored)));
+      }
+      function saveInvoicesToProfile(profileId, list) {
+        if (!profileId) return;
+        storageSet(invoicesStorageKey(profileId), JSON.stringify(list.map(invoiceToStored)));
+      }
+      function loadPaymentsForView(profileId) {
+        if (!profileId) return [];
+        if (isMainProfile(profileId)) {
+          const all = [];
+          for (const p of PROFILES) {
+            for (const row of loadPaymentsForProfile(p.id)) {
+              all.push({ ...row, ownerId: p.id });
+            }
+          }
+          return all;
+        }
+        return loadPaymentsForProfile(profileId).map((x) => ({ ...x, ownerId: profileId }));
+      }
+      function loadInvoicesForView(profileId) {
+        if (!profileId) return [];
+        if (isMainProfile(profileId)) {
+          const all = [];
+          for (const p of PROFILES) {
+            for (const row of loadInvoicesForProfile(p.id)) {
+              all.push({ ...row, ownerId: p.id });
+            }
+          }
+          return all;
+        }
+        return loadInvoicesForProfile(profileId).map((x) => ({ ...x, ownerId: profileId }));
+      }
+
+      function mapPaymentRowsToView(profileId, rows) {
+        const base = (rows || []).map((r) => ({
+          id: r.id,
+          ownerId: r.owner_profile_id,
+          section: r.section,
+          companyName: r.company_name,
+          amount: r.amount,
+          paymentDate: r.payment_date,
+          paid: Boolean(r.paid),
+          upd: Boolean(r.upd),
+          updInvoiceId: r.upd_invoice_id || "",
+          createdAt: r.created_at,
+        }));
+        if (!profileId) return [];
+        if (isMainProfile(profileId)) return base;
+        return base.filter((x) => x.ownerId === profileId);
+      }
+      function mapInvoiceRowsToView(profileId, rows) {
+        const base = (rows || []).map((r) => ({
+          id: r.id,
+          ownerId: r.owner_profile_id,
+          section: r.section,
+          companyName: r.company_name,
+          amount: r.amount,
+          invoiceDate: r.invoice_date,
+          paid: Boolean(r.paid),
+          createdAt: r.created_at,
+        }));
+        if (!profileId) return [];
+        if (isMainProfile(profileId)) return base;
+        return base.filter((x) => x.ownerId === profileId);
+      }
+
+      async function refreshPaymentsFromRemote() {
+        if (!state.profileId) {
+          isPaymentsLoading = false;
+          renderPayments();
+          updateMeta();
+          return;
+        }
+        isPaymentsLoading = true;
+        renderPayments();
+
+        try {
+          if (paymentsAbort) paymentsAbort.abort();
+        } catch {}
+        paymentsAbort = typeof AbortController !== "undefined" ? new AbortController() : null;
+        const signal = paymentsAbort ? paymentsAbort.signal : undefined;
+
+        for (let attempt = 0; attempt < 3; attempt++) {
+          if (attempt > 0) {
+            await new Promise((r) => setTimeout(r, 160 * attempt));
+          }
+          try {
+            const r = await fetch("/api/payments", { ...API_FETCH_INIT, signal });
+            if (!r.ok) throw new Error("api");
+            const data = await r.json();
+            useRemote = true;
+            const fresh = mapPaymentRowsToView(state.profileId, data.payments);
+            const now = Date.now();
+            // применяем недавние локальные переключения флагов поверх данных сервера
+            state.payments = fresh.map((p) => {
+              const pending = paymentsPendingFlags.get(p.id);
+              if (!pending) return p;
+              if (now - pending.ts > 15000) {
+                paymentsPendingFlags.delete(p.id);
+                return p;
+              }
+              return {
+                ...p,
+                paid: pending.paid,
+                upd: pending.upd,
+                updInvoiceId: pending.updInvoiceId,
+              };
+            });
+            isPaymentsLoading = false;
+            renderPayments();
+            return;
+          } catch {
+            /* retry */
+          }
+        }
+
+        if (preferLocalStorageFallback()) {
+          useRemote = false;
+          state.payments = loadPaymentsForView(state.profileId);
+        } else {
+          useRemote = true;
+          remoteSyncWarning = true;
+        }
+        isPaymentsLoading = false;
+        renderPayments();
+      }
+      async function refreshInvoicesFromRemote() {
+        if (!state.profileId) {
+          isInvoicesLoading = false;
+          renderInvoices();
+          updateMeta();
+          return;
+        }
+        isInvoicesLoading = true;
+        renderInvoices();
+        updateMeta();
+
+        try {
+          if (invoicesAbort) invoicesAbort.abort();
+        } catch {}
+        invoicesAbort = typeof AbortController !== "undefined" ? new AbortController() : null;
+        const signal = invoicesAbort ? invoicesAbort.signal : undefined;
+
+        for (let attempt = 0; attempt < 3; attempt++) {
+          if (attempt > 0) {
+            await new Promise((r) => setTimeout(r, 160 * attempt));
+          }
+          try {
+            const r = await fetch("/api/invoices", { ...API_FETCH_INIT, signal });
+            if (!r.ok) throw new Error("api");
+            const data = await r.json();
+            useRemote = true;
+            state.invoices = mapInvoiceRowsToView(state.profileId, data.invoices);
+            isInvoicesLoading = false;
+            renderInvoices();
+            updateMeta();
+            return;
+          } catch {
+            /* retry */
+          }
+        }
+
+        if (preferLocalStorageFallback()) {
+          useRemote = false;
+          state.invoices = loadInvoicesForView(state.profileId);
+        } else {
+          useRemote = true;
+          remoteSyncWarning = true;
+        }
+        isInvoicesLoading = false;
+        renderInvoices();
+        updateMeta();
+      }
+
+      async function addPayment(payload) {
+        if (!state.profileId) return false;
+        const row = {
+          id: crypto.randomUUID(),
+          ownerId: state.profileId,
+          section: payload.section,
+          companyName: payload.companyName,
+          amount: payload.amount,
+          paymentDate: payload.paymentDate,
+          paid: false,
+          upd: false,
+          updInvoiceId: "",
+          createdAt: nowIso(),
+        };
+        if (useRemote) {
+          try {
+            // оптимистично: показать позицию сразу
+            if (!state.payments.some((x) => x.id === row.id)) {
+              state.payments = state.payments.concat([row]);
+            }
+            renderPayments();
+
+            const r = await fetch("/api/payments", {
+              ...API_FETCH_INIT,
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                upsert: true,
+                payment: {
+                  id: row.id,
+                  owner_profile_id: row.ownerId,
+                  section: row.section,
+                  company_name: row.companyName,
+                  amount: row.amount,
+                  payment_date: row.paymentDate,
+                  paid: row.paid,
+                  upd: row.upd,
+                  upd_invoice_id: row.updInvoiceId || null,
+                  created_at: row.createdAt,
+                },
+              }),
+            });
+            if (!r.ok) throw new Error("api");
+            refreshPaymentsFromRemote();
+            return true;
+          } catch {
+            if (preferLocalStorageFallback()) {
+              useRemote = false;
+            } else {
+              useRemote = true;
+              remoteSyncWarning = true;
+              renderPayments();
+              return false;
+            }
+          }
+        }
+        const list = loadPaymentsForProfile(state.profileId);
+        list.push(row);
+        savePaymentsToProfile(state.profileId, list);
+        state.payments = loadPaymentsForView(state.profileId);
+        renderPayments();
+        return true;
+      }
+
+      async function addInvoice(payload) {
+        if (!state.profileId) return false;
+        const row = {
+          id: crypto.randomUUID(),
+          ownerId: state.profileId,
+          section: payload.section,
+          companyName: payload.companyName,
+          amount: payload.amount,
+          invoiceDate: payload.invoiceDate,
+          paid: false,
+          createdAt: nowIso(),
+        };
+        if (useRemote) {
+          try {
+            if (!state.invoices.some((x) => x.id === row.id)) {
+              state.invoices = state.invoices.concat([row]);
+            }
+            renderInvoices();
+
+            const r = await fetch("/api/invoices", {
+              ...API_FETCH_INIT,
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                upsert: true,
+                invoice: {
+                  id: row.id,
+                  owner_profile_id: row.ownerId,
+                  section: row.section,
+                  company_name: row.companyName,
+                  amount: row.amount,
+                  invoice_date: row.invoiceDate,
+                  paid: row.paid,
+                  created_at: row.createdAt,
+                },
+              }),
+            });
+            if (!r.ok) throw new Error("api");
+            refreshInvoicesFromRemote();
+            return true;
+          } catch {
+            if (preferLocalStorageFallback()) {
+              useRemote = false;
+            } else {
+              useRemote = true;
+              remoteSyncWarning = true;
+              renderInvoices();
+              return false;
+            }
+          }
+        }
+        const list = loadInvoicesForProfile(state.profileId);
+        list.push(row);
+        saveInvoicesToProfile(state.profileId, list);
+        state.invoices = loadInvoicesForView(state.profileId);
+        renderInvoices();
+        return true;
+      }
+
+      async function persistPaymentUpdate(item) {
+        const ownerId = item.ownerId || state.profileId;
+        if (!ownerId) return;
+        if (useRemote) {
+          try {
+            // оптимистично уже обновлено в памяти — просто синхронизируем
+            renderPayments();
+            const r = await fetch("/api/payments", {
+              ...API_FETCH_INIT,
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                upsert: true,
+                payment: {
+                  id: item.id,
+                  owner_profile_id: ownerId,
+                  section: item.section,
+                  company_name: item.companyName,
+                  amount: item.amount,
+                  payment_date: item.paymentDate,
+                  paid: Boolean(item.paid),
+                  upd: Boolean(item.upd),
+                  upd_invoice_id: item.updInvoiceId || null,
+                  created_at: item.createdAt,
+                },
+              }),
+            });
+            if (!r.ok) throw new Error("api");
+            paymentsPendingFlags.delete(item.id);
+            refreshPaymentsFromRemote();
+          } catch {
+            if (preferLocalStorageFallback()) {
+              useRemote = false;
+              const list = loadPaymentsForProfile(ownerId);
+              const i = list.findIndex((x) => x.id === item.id);
+              if (i === -1) return;
+              list[i] = paymentToStored(item);
+              savePaymentsToProfile(ownerId, list);
+              state.payments = loadPaymentsForView(state.profileId);
+            } else {
+              useRemote = true;
+              remoteSyncWarning = true;
+            }
+            renderPayments();
+          }
+          return;
+        }
+        const list = loadPaymentsForProfile(ownerId);
+        const i = list.findIndex((x) => x.id === item.id);
+        if (i === -1) return;
+        list[i] = paymentToStored(item);
+        savePaymentsToProfile(ownerId, list);
+        state.payments = loadPaymentsForView(state.profileId);
+        renderPayments();
+      }
+
+      async function createDeferredInvoiceFromPayment(payment) {
+        if (!payment || !payment.ownerId) return null;
+        if (!state.profileId) return null;
+
+        // защита от дублей: если уже есть связанный счет — не создаем заново
+        if (payment.updInvoiceId && state.invoices.some((x) => x.id === payment.updInvoiceId)) {
+          return payment.updInvoiceId;
+        }
+
+        const invoiceId = payment.updInvoiceId || crypto.randomUUID();
+        const row = {
+          id: invoiceId,
+          ownerId: payment.ownerId,
+          section: "implementation",
+          companyName: String(payment.companyName || "").trim(),
+          amount: String(payment.amount || "").trim(),
+          invoiceDate: toDayMonthYearShortFromPaymentDate(payment.paymentDate),
+          createdAt: nowIso(),
+        };
+
+        if (!state.invoices.some((x) => x.id === row.id)) {
+          state.invoices = state.invoices.concat([row]);
+        }
+        renderInvoices();
+
+        await persistInvoiceUpdate(row);
+        return row.id;
+      }
+
+      async function setPaymentUpdFlag(paymentId, value) {
+        const item = state.payments.find((x) => x.id === paymentId);
+        if (!item) return;
+        if (item.section !== "implementation") return;
+
+        item.upd = Boolean(value);
+        if (item.upd) {
+          const invoiceId = await createDeferredInvoiceFromPayment(item);
+          if (invoiceId) item.updInvoiceId = invoiceId;
+        }
+
+        paymentsPendingFlags.set(item.id, {
+          paid: Boolean(item.paid),
+          upd: Boolean(item.upd),
+          updInvoiceId: item.updInvoiceId || "",
+          ts: Date.now(),
+        });
+        renderPayments();
+        await persistPaymentUpdate(item);
+      }
+
+      async function setPaymentPaidFlag(paymentId, value) {
+        const item = state.payments.find((x) => x.id === paymentId);
+        if (!item) return;
+        item.paid = Boolean(value);
+        paymentsPendingFlags.set(item.id, {
+          paid: Boolean(item.paid),
+          upd: Boolean(item.upd),
+          updInvoiceId: item.updInvoiceId || "",
+          ts: Date.now(),
+        });
+        renderPayments();
+        await persistPaymentUpdate(item);
+      }
+
+      async function persistInvoiceUpdate(item) {
+        const ownerId = item.ownerId || state.profileId;
+        if (!ownerId) return;
+        if (useRemote) {
+          try {
+            renderInvoices();
+            const r = await fetch("/api/invoices", {
+              ...API_FETCH_INIT,
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                upsert: true,
+                invoice: {
+                  id: item.id,
+                  owner_profile_id: ownerId,
+                  section: item.section,
+                  company_name: item.companyName,
+                  amount: item.amount,
+                  invoice_date: item.invoiceDate,
+                  paid: Boolean(item.paid),
+                  created_at: item.createdAt,
+                },
+              }),
+            });
+            if (!r.ok) throw new Error("api");
+            refreshInvoicesFromRemote();
+          } catch {
+            if (preferLocalStorageFallback()) {
+              useRemote = false;
+              const list = loadInvoicesForProfile(ownerId);
+              const i = list.findIndex((x) => x.id === item.id);
+              if (i === -1) return;
+              list[i] = invoiceToStored(item);
+              saveInvoicesToProfile(ownerId, list);
+              state.invoices = loadInvoicesForView(state.profileId);
+            } else {
+              useRemote = true;
+              remoteSyncWarning = true;
+            }
+            renderInvoices();
+          }
+          return;
+        }
+        const list = loadInvoicesForProfile(ownerId);
+        const i = list.findIndex((x) => x.id === item.id);
+        if (i === -1) return;
+        list[i] = invoiceToStored(item);
+        saveInvoicesToProfile(ownerId, list);
+        state.invoices = loadInvoicesForView(state.profileId);
+        renderInvoices();
+      }
+
+      async function setInvoicePaidFlag(invoiceId, value) {
+        const item = state.invoices.find((x) => x.id === invoiceId);
+        if (!item) return;
+        item.paid = Boolean(value);
+        renderInvoices();
+        await persistInvoiceUpdate(item);
+      }
+
+      async function deletePaymentById(paymentId) {
+        const item = state.payments.find((x) => x.id === paymentId);
+        if (!item) return;
+        const ownerId = item.ownerId || state.profileId;
+        if (!ownerId) return;
+        if (useRemote) {
+          try {
+            // оптимистично: удалить из UI сразу
+            state.payments = state.payments.filter((x) => x.id !== item.id);
+            renderPayments();
+            const r = await fetch("/api/payments", {
+              ...API_FETCH_INIT,
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ deleteById: true, id: item.id, owner_profile_id: ownerId }),
+            });
+            if (!r.ok) throw new Error("api");
+            refreshPaymentsFromRemote();
+          } catch {
+            if (preferLocalStorageFallback()) {
+              useRemote = false;
+              const list = loadPaymentsForProfile(ownerId).filter((x) => x.id !== item.id);
+              savePaymentsToProfile(ownerId, list);
+              state.payments = loadPaymentsForView(state.profileId);
+            } else {
+              useRemote = true;
+              remoteSyncWarning = true;
+            }
+            renderPayments();
+          }
+          return;
+        }
+        const list = loadPaymentsForProfile(ownerId).filter((x) => x.id !== item.id);
+        savePaymentsToProfile(ownerId, list);
+        state.payments = loadPaymentsForView(state.profileId);
+        renderPayments();
+      }
+
+      async function deleteInvoiceById(invoiceId) {
+        const item = state.invoices.find((x) => x.id === invoiceId);
+        if (!item) return;
+        const ownerId = item.ownerId || state.profileId;
+        if (!ownerId) return;
+        if (useRemote) {
+          try {
+            state.invoices = state.invoices.filter((x) => x.id !== item.id);
+            renderInvoices();
+            const r = await fetch("/api/invoices", {
+              ...API_FETCH_INIT,
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ deleteById: true, id: item.id, owner_profile_id: ownerId }),
+            });
+            if (!r.ok) throw new Error("api");
+            refreshInvoicesFromRemote();
+          } catch {
+            if (preferLocalStorageFallback()) {
+              useRemote = false;
+              const list = loadInvoicesForProfile(ownerId).filter((x) => x.id !== item.id);
+              saveInvoicesToProfile(ownerId, list);
+              state.invoices = loadInvoicesForView(state.profileId);
+            } else {
+              useRemote = true;
+              remoteSyncWarning = true;
+            }
+            renderInvoices();
+          }
+          return;
+        }
+        const list = loadInvoicesForProfile(ownerId).filter((x) => x.id !== item.id);
+        saveInvoicesToProfile(ownerId, list);
+        state.invoices = loadInvoicesForView(state.profileId);
+        renderInvoices();
+      }
+
+      /** Задачи для текущего режима: у главного — объединение всех профилей (с ownerId). */
+      function loadTasksForView(profileId) {
+        if (!profileId) return [];
+        if (isMainProfile(profileId)) {
+          const all = [];
+          for (const p of PROFILES) {
+            for (const t of loadTasksForProfile(p.id)) {
+              all.push({ ...t, ownerId: p.id });
+            }
+          }
+          return all;
+        }
+        return loadTasksForProfile(profileId).map((t) => ({ ...t, ownerId: profileId }));
+      }
+
+      function taskToStored(t) {
+        return {
+          id: t.id,
+          text: t.text,
+          done: t.done,
+          day: t.day,
+          createdAt: t.createdAt,
+          doneAt: t.doneAt ?? null,
+          doneComment: t.doneComment || "",
+          creatorId: t.creatorId || "",
+        };
+      }
+
+      function saveTasksToProfile(profileId, tasks) {
+        if (!profileId) return;
+        storageSet(tasksStorageKey(profileId), JSON.stringify(tasks.map(taskToStored)));
+      }
+
+      async function persistTaskUpdate(task) {
+        const ownerId = task.ownerId || state.profileId;
+        if (!ownerId) return;
+        if (useRemote) {
+          try {
+            const r = await fetch("/api/tasks", {
+              ...API_FETCH_INIT,
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                upsert: true,
+                task: {
+                  id: task.id,
+                  owner_profile_id: ownerId,
+                  creator_profile_id: task.creatorId || ownerId,
+                  text: task.text,
+                  day: task.day,
+                  done: task.done,
+                  created_at: task.createdAt,
+                  done_at: task.doneAt,
+                  done_comment: task.doneComment || "",
+                },
+              }),
+            });
+            if (!r.ok) throw new Error();
+            refreshTasksFromRemote();
+          } catch {
+            if (preferLocalStorageFallback()) {
+              useRemote = false;
+              const list = loadTasksForProfile(ownerId);
+              const i = list.findIndex((x) => x.id === task.id);
+              if (i === -1) return;
+              list[i] = taskToStored(task);
+              saveTasksToProfile(ownerId, list);
+              state.tasks = loadTasksForView(state.profileId);
+            } else {
+              useRemote = true;
+              remoteSyncWarning = true;
+            }
+            render();
+          }
+          return;
+        }
+        const list = loadTasksForProfile(ownerId);
+        const i = list.findIndex((x) => x.id === task.id);
+        if (i === -1) return;
+        list[i] = taskToStored(task);
+        saveTasksToProfile(ownerId, list);
+        state.tasks = loadTasksForView(state.profileId);
+        render();
+      }
+
+      async function deleteTaskById(taskId) {
+        const task = state.tasks.find((x) => x.id === taskId);
+        if (!task) return;
+        const ownerId = task.ownerId || state.profileId;
+        if (!ownerId) return;
+
+        // optimistic UI
+        state.tasks = state.tasks.filter((x) => x.id !== task.id);
+        render();
+
+        if (useRemote) {
+          try {
+            const r = await fetch("/api/tasks", {
+              ...API_FETCH_INIT,
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ deleteById: true, id: task.id, owner_profile_id: ownerId }),
+            });
+            if (!r.ok) throw new Error("api");
+            refreshTasksFromRemote();
+            return;
+          } catch {
+            if (!preferLocalStorageFallback()) {
+              useRemote = true;
+              remoteSyncWarning = true;
+              render();
+              return;
+            }
+            useRemote = false;
+          }
+        }
+
+        const list = loadTasksForProfile(ownerId).filter((x) => x.id !== task.id);
+        saveTasksToProfile(ownerId, list);
+        state.tasks = loadTasksForView(state.profileId);
+        render();
+      }
+
+      let pendingCloseTaskId = null;
+      let editingTaskId = null;
+
+      function openEditTaskModal(taskId) {
+        const task = state.tasks.find((x) => x.id === taskId);
+        if (!task) return;
+        editingTaskId = taskId;
+        $("editTaskErr").textContent = "";
+        $("editTaskTextInput").value = task.text;
+        const wrap = $("editResultWrap");
+        if (task.done) {
+          wrap.style.display = "block";
+          $("editTaskResultInput").value = task.doneComment || "";
+        } else {
+          wrap.style.display = "none";
+          $("editTaskResultInput").value = "";
+        }
+        $("editTaskModal").classList.add("open");
+        $("editTaskModal").setAttribute("aria-hidden", "false");
+        setTimeout(() => $("editTaskTextInput").focus(), 0);
+      }
+
+      function closeEditTaskModal() {
+        editingTaskId = null;
+        $("editTaskModal").classList.remove("open");
+        $("editTaskModal").setAttribute("aria-hidden", "true");
+        $("editTaskErr").textContent = "";
+      }
+
+      async function saveEditTask() {
+        const task = state.tasks.find((x) => x.id === editingTaskId);
+        if (!task) {
+          closeEditTaskModal();
+          return;
+        }
+        const newText = String($("editTaskTextInput").value || "").trim();
+        if (newText.length < 1) {
+          $("editTaskErr").textContent = "Введите текст задачи (не пусто)";
+          return;
+        }
+        task.text = newText;
+        if (task.done) {
+          task.doneComment = String($("editTaskResultInput").value || "").trim();
+        }
+        closeEditTaskModal();
+        await persistTaskUpdate(task);
+      }
+
+      function hideCommentModal() {
+        $("commentModal").classList.remove("open");
+        $("commentModal").setAttribute("aria-hidden", "true");
+        $("taskCommentInput").value = "";
+        $("cmtErr").textContent = "";
+      }
+
+      function openCommentModal(taskId) {
+        pendingCloseTaskId = taskId;
+        $("cmtErr").textContent = "";
+        $("taskCommentInput").value = "";
+        const el = $("commentModal");
+        el.classList.add("open");
+        el.setAttribute("aria-hidden", "false");
+        setTimeout(() => $("taskCommentInput").focus(), 0);
+      }
+
+      function closeCommentModal() {
+        pendingCloseTaskId = null;
+        hideCommentModal();
+        render();
+      }
+
+      async function confirmCloseWithComment() {
+        const task = state.tasks.find((x) => x.id === pendingCloseTaskId);
+        if (!task) {
+          closeCommentModal();
+          return;
+        }
+        const comment = String($("taskCommentInput").value || "").trim();
+        if (comment.length < 2) {
+          $("cmtErr").textContent = "Комментарий должен быть минимум 2 символа";
+          return;
+        }
+        task.done = true;
+        task.doneAt = nowIso();
+        task.doneComment = comment;
+        pendingCloseTaskId = null;
+        hideCommentModal();
+        await persistTaskUpdate(task);
+      }
+
+      function profileById(id) {
+        return PROFILES.find((p) => p.id === id) || null;
+      }
+
+      function loadSavedProfileId() {
+        const raw = storageGet(STORAGE_ACTIVE_PROFILE);
+        const parsed = safeJsonParse(raw, null);
+        const s = typeof parsed === "string" ? parsed : raw;
+        if (typeof s === "string" && profileById(s)) return s;
+        return null;
+      }
+
+      function loadSelectedDayForProfile(profileId) {
+        if (!profileId) return todayYmd();
+        const raw = storageGet(dayStorageKey(profileId));
+        const v = safeJsonParse(raw, null);
+        if (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+        return todayYmd();
+      }
+
+      let pendingProfileId = null;
+
+      const initialProfileId = loadSavedProfileId();
+      const initialViewRaw = storageGet(STORAGE_ACTIVE_VIEW);
+      const initialView = initialViewRaw === "payments" || initialViewRaw === "invoices" ? initialViewRaw : "tasks";
+      const state = {
+        profileId: initialProfileId,
+        tasks: [],
+        payments: [],
+        invoices: [],
+        selectedDay: loadSelectedDayForProfile(initialProfileId),
+        activeView: initialView,
+        paymentsMonthFilter: "all",
+        paymentsProfilesFilter: [],
+        invoicesProfilesFilter: [],
+        tasksProfilesFilter: [],
+      };
+
+      function loadTasksProfilesFilter() {
+        const raw = storageGet(STORAGE_TASKS_PROFILES_FILTER);
+        const parsed = safeJsonParse(raw, null);
+        const arr = Array.isArray(parsed) ? parsed : [];
+        const ids = arr.filter((x) => typeof x === "string" && profileById(x));
+        return ids.length ? ids : PROFILES.map((p) => p.id);
+      }
+
+      function saveTasksProfilesFilter(ids) {
+        storageSet(STORAGE_TASKS_PROFILES_FILTER, JSON.stringify(ids));
+      }
+
+      function syncTasksProfilesFilterUI() {
+        const wrap = $("tasksProfilesFilterWrap");
+        const btnText = $("tasksProfilesBtnText");
+        const menu = $("tasksProfilesMenu");
+        const itemsHost = $("tasksProfilesMenuItems");
+        if (!state.profileId || !isMainProfile(state.profileId)) {
+          wrap.style.display = "none";
+          return;
+        }
+        wrap.style.display = "";
+        const allIds = PROFILES.map((p) => p.id);
+        const selected = new Set(state.tasksProfilesFilter || []);
+        const isAll = allIds.every((id) => selected.has(id));
+        btnText.textContent = isAll ? "Все" : `Выбрано: ${selected.size}`;
+        itemsHost.innerHTML = "";
+
+        const mkItem = (id, label, checked) => {
+          const row = document.createElement("label");
+          row.className = "paymentsMultiItem";
+          const cb = document.createElement("input");
+          cb.type = "checkbox";
+          cb.checked = checked;
+          cb.dataset.id = id;
+          const name = document.createElement("div");
+          name.className = "paymentsMultiName";
+          name.textContent = label;
+          row.appendChild(cb);
+          row.appendChild(name);
+          return row;
+        };
+        itemsHost.appendChild(mkItem("__all__", "Все", isAll));
+        for (const p of PROFILES) {
+          itemsHost.appendChild(mkItem(p.id, p.name, selected.has(p.id)));
+        }
+        menu.classList.remove("open");
+      }
+
+      function setTasksProfilesFilter(ids) {
+        const uniq = Array.from(new Set(ids.filter((id) => profileById(id))));
+        state.tasksProfilesFilter = uniq;
+        saveTasksProfilesFilter(uniq);
+        syncTasksProfilesFilterUI();
+        render();
+      }
+
+      function toggleTasksProfilesMenu(force) {
+        const menu = $("tasksProfilesMenu");
+        const next = typeof force === "boolean" ? force : !menu.classList.contains("open");
+        menu.classList.toggle("open", next);
+      }
+
+      function loadPaymentsProfilesFilter() {
+        const raw = storageGet(STORAGE_PAYMENTS_PROFILES_FILTER);
+        const parsed = safeJsonParse(raw, null);
+        const arr = Array.isArray(parsed) ? parsed : [];
+        const ids = arr.filter((x) => typeof x === "string" && profileById(x));
+        // default: all known profiles
+        return ids.length ? ids : PROFILES.map((p) => p.id);
+      }
+
+      function savePaymentsProfilesFilter(ids) {
+        storageSet(STORAGE_PAYMENTS_PROFILES_FILTER, JSON.stringify(ids));
+      }
+
+      function syncPaymentsProfilesFilterUI() {
+        const wrap = $("paymentsProfilesFilterWrap");
+        const btnText = $("paymentsProfilesBtnText");
+        const menu = $("paymentsProfilesMenu");
+        const itemsHost = $("paymentsProfilesMenuItems");
+        if (!state.profileId || !isMainProfile(state.profileId)) {
+          wrap.style.display = "none";
+          return;
+        }
+        wrap.style.display = "";
+        const allIds = PROFILES.map((p) => p.id);
+        const selected = new Set(state.paymentsProfilesFilter || []);
+        const isAll = allIds.every((id) => selected.has(id));
+        btnText.textContent = isAll ? "Все" : `Выбрано: ${selected.size}`;
+
+        // rebuild menu items
+        itemsHost.innerHTML = "";
+        const mkItem = (id, label, checked) => {
+          const row = document.createElement("label");
+          row.className = "paymentsMultiItem";
+          const cb = document.createElement("input");
+          cb.type = "checkbox";
+          cb.checked = checked;
+          cb.dataset.id = id;
+          const name = document.createElement("div");
+          name.className = "paymentsMultiName";
+          name.textContent = label;
+          row.appendChild(cb);
+          row.appendChild(name);
+          return row;
+        };
+
+        // Special "Все" toggle
+        const allRow = mkItem("__all__", "Все", isAll);
+        itemsHost.appendChild(allRow);
+
+        for (const p of PROFILES) {
+          itemsHost.appendChild(mkItem(p.id, p.name, selected.has(p.id)));
+        }
+
+        // keep menu closed by default
+        menu.classList.remove("open");
+      }
+
+      function setPaymentsProfilesFilter(ids) {
+        const uniq = Array.from(new Set(ids.filter((id) => profileById(id))));
+        state.paymentsProfilesFilter = uniq;
+        savePaymentsProfilesFilter(uniq);
+        syncPaymentsProfilesFilterUI();
+        renderPayments();
+      }
+
+      function togglePaymentsProfilesMenu(force) {
+        const menu = $("paymentsProfilesMenu");
+        const next = typeof force === "boolean" ? force : !menu.classList.contains("open");
+        menu.classList.toggle("open", next);
+      }
+
+      function loadInvoicesProfilesFilter() {
+        const raw = storageGet(STORAGE_INVOICES_PROFILES_FILTER);
+        const parsed = safeJsonParse(raw, null);
+        const arr = Array.isArray(parsed) ? parsed : [];
+        const ids = arr.filter((x) => typeof x === "string" && profileById(x));
+        return ids.length ? ids : PROFILES.map((p) => p.id);
+      }
+
+      function saveInvoicesProfilesFilter(ids) {
+        storageSet(STORAGE_INVOICES_PROFILES_FILTER, JSON.stringify(ids));
+      }
+
+      function syncTaskAssigneeUI() {
+        const el = $("taskAssignee");
+        if (!el) return;
+        if (!state.profileId || !isMainProfile(state.profileId)) {
+          el.style.display = "none";
+          return;
+        }
+        el.style.display = "";
+        const saved = storageGet(STORAGE_TASK_ASSIGNEE);
+        const prev = typeof saved === "string" ? saved : "";
+        el.innerHTML = "";
+        for (const p of profilesMainFirst()) {
+          const opt = document.createElement("option");
+          opt.value = p.id;
+          opt.textContent = p.name;
+          el.appendChild(opt);
+        }
+        el.value = profileById(prev) ? prev : MAIN_PROFILE_ID;
+      }
+
+      function syncInvoicesProfilesFilterUI() {
+        const wrap = $("invoicesProfilesFilterWrap");
+        const btnText = $("invoicesProfilesBtnText");
+        const menu = $("invoicesProfilesMenu");
+        const itemsHost = $("invoicesProfilesMenuItems");
+        if (!state.profileId || !isMainProfile(state.profileId)) {
+          wrap.style.display = "none";
+          return;
+        }
+        wrap.style.display = "";
+        const allIds = PROFILES.map((p) => p.id);
+        const selected = new Set(state.invoicesProfilesFilter || []);
+        const isAll = allIds.every((id) => selected.has(id));
+        btnText.textContent = isAll ? "Все" : `Выбрано: ${selected.size}`;
+        itemsHost.innerHTML = "";
+
+        const mkItem = (id, label, checked) => {
+          const row = document.createElement("label");
+          row.className = "paymentsMultiItem";
+          const cb = document.createElement("input");
+          cb.type = "checkbox";
+          cb.checked = checked;
+          cb.dataset.id = id;
+          const name = document.createElement("div");
+          name.className = "paymentsMultiName";
+          name.textContent = label;
+          row.appendChild(cb);
+          row.appendChild(name);
+          return row;
+        };
+        itemsHost.appendChild(mkItem("__all__", "Все", isAll));
+        for (const p of PROFILES) {
+          itemsHost.appendChild(mkItem(p.id, p.name, selected.has(p.id)));
+        }
+        menu.classList.remove("open");
+      }
+
+      function setInvoicesProfilesFilter(ids) {
+        const uniq = Array.from(new Set(ids.filter((id) => profileById(id))));
+        state.invoicesProfilesFilter = uniq;
+        saveInvoicesProfilesFilter(uniq);
+        syncInvoicesProfilesFilterUI();
+        renderInvoices();
+      }
+
+      function toggleInvoicesProfilesMenu(force) {
+        const menu = $("invoicesProfilesMenu");
+        const next = typeof force === "boolean" ? force : !menu.classList.contains("open");
+        menu.classList.toggle("open", next);
+      }
+
+      function applyActiveView() {
+        const view = state.activeView;
+        const showTasks = view === "tasks";
+        const showPayments = view === "payments";
+        const showInvoices = view === "invoices";
+        $("tasksPanel").style.display = showTasks ? "" : "none";
+        $("paymentsPanel").style.display = showPayments ? "" : "none";
+        $("invoicesPanel").style.display = showInvoices ? "" : "none";
+        $("activeModuleLabel").textContent = showTasks
+          ? "/ Задачи"
+          : showPayments
+            ? "/ Потенциальные платежи"
+            : "/ Отложенные счета";
+        $("goTasks").classList.toggle("btnPrimary", showTasks);
+        $("goTasks").classList.toggle("btnSecondary", !showTasks);
+        $("goPayments").classList.toggle("btnPrimary", showPayments);
+        $("goPayments").classList.toggle("btnSecondary", !showPayments);
+        $("goInvoices").classList.toggle("btnPrimary", showInvoices);
+        $("goInvoices").classList.toggle("btnSecondary", !showInvoices);
+        $("goTasks").setAttribute("aria-pressed", showTasks ? "true" : "false");
+        $("goPayments").setAttribute("aria-pressed", showPayments ? "true" : "false");
+        $("goInvoices").setAttribute("aria-pressed", showInvoices ? "true" : "false");
+      }
+
+      function setActiveView(nextView) {
+        state.activeView = nextView === "payments" || nextView === "invoices" ? nextView : "tasks";
+        localStorage.setItem(STORAGE_ACTIVE_VIEW, state.activeView);
+        applyActiveView();
+      }
+
+      function fillProfileSelect() {
+        const sel = $("profileSelect");
+        while (sel.options.length > 1) {
+          sel.remove(1);
+        }
+        for (const p of PROFILES) {
+          const o = document.createElement("option");
+          o.value = p.id;
+          o.textContent = p.name;
+          sel.appendChild(o);
+        }
+      }
+
+      function syncProfileSelect() {
+        $("profileSelect").value = state.profileId || "";
+      }
+
+      async function applyProfileSwitch(newProfileId) {
+        state.profileId = newProfileId;
+        storageSet(STORAGE_ACTIVE_PROFILE, JSON.stringify(newProfileId));
+        state.selectedDay = loadSelectedDayForProfile(newProfileId);
+        $("day").value = state.selectedDay;
+        syncProfileSelect();
+
+        // быстрый отклик UI
+        ensureLocalRolloverApplied();
+        state.tasks = loadTasksForView(newProfileId);
+        state.payments = loadPaymentsForView(newProfileId);
+        state.paymentsProfilesFilter = loadPaymentsProfilesFilter();
+        state.invoices = loadInvoicesForView(newProfileId);
+        state.invoicesProfilesFilter = loadInvoicesProfilesFilter();
+        state.tasksProfilesFilter = loadTasksProfilesFilter();
+        render();
+        syncTaskAssigneeUI();
+        syncTasksProfilesFilterUI();
+        syncPaymentsProfilesFilterUI();
+        renderPayments();
+        syncInvoicesProfilesFilterUI();
+        renderInvoices();
+
+        if (useRemote) {
+          refreshTasksFromRemote();
+          refreshPaymentsFromRemote();
+          refreshInvoicesFromRemote();
+        }
+      }
+
+      function hidePasswordModal() {
+        $("passwordModal").classList.remove("open");
+        $("passwordModal").setAttribute("aria-hidden", "true");
+        $("profilePassword").value = "";
+        $("pwdErr").textContent = "";
+      }
+
+      function openPasswordModal() {
+        const p = profileById(pendingProfileId);
+        $("pwdErr").textContent = "";
+        $("profilePassword").value = "";
+        $("pwdProfileName").textContent = p ? `Профиль: ${p.name}` : "";
+        const el = $("passwordModal");
+        el.classList.add("open");
+        el.setAttribute("aria-hidden", "false");
+        setTimeout(() => $("profilePassword").focus(), 0);
+      }
+
+      function closePasswordModal() {
+        pendingProfileId = null;
+        hidePasswordModal();
+        syncProfileSelect();
+      }
+
+      async function tryConfirmPassword() {
+        const p = profileById(pendingProfileId);
+        const pwd = $("profilePassword").value;
+        if (!p) {
+          closePasswordModal();
+          return;
+        }
+        if (pwd !== p.password) {
+          $("pwdErr").textContent = "Неверный пароль";
+          return;
+        }
+        const id = p.id;
+        pendingProfileId = null;
+        hidePasswordModal();
+        await applyProfileSwitch(id);
+        $("taskText").focus();
+      }
+
+      function fmtDateTime(iso) {
+        try {
+          return new Intl.DateTimeFormat("ru-RU", { dateStyle: "medium", timeStyle: "short" }).format(new Date(iso));
+        } catch {
+          return iso;
+        }
+      }
+
+      function fmtDayMonth(ymd) {
+        const s = String(ymd || "").trim();
+        const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+        if (!m) return s;
+        return `${m[3]}.${m[2]}`;
+      }
+
+      function normalizeDayMonthInput(raw) {
+        const digits = String(raw || "").replace(/[^\d]/g, "").slice(0, 4);
+        if (digits.length <= 2) return digits;
+        return `${digits.slice(0, 2)}.${digits.slice(2)}`;
+      }
+
+      function isValidDayMonth(value) {
+        const m = /^(\d{2})\.(\d{2})$/.exec(String(value || "").trim());
+        if (!m) return false;
+        const day = Number(m[1]);
+        const month = Number(m[2]);
+        return month >= 1 && month <= 12 && day >= 1 && day <= 31;
+      }
+
+      function normalizeDayMonthYearInput(raw) {
+        const digits = String(raw || "").replace(/[^\d]/g, "").slice(0, 6);
+        if (digits.length <= 2) return digits;
+        if (digits.length <= 4) return `${digits.slice(0, 2)}.${digits.slice(2)}`;
+        return `${digits.slice(0, 2)}.${digits.slice(2, 4)}.${digits.slice(4)}`;
+      }
+
+      function isValidDayMonthYear(value) {
+        const m = /^(\d{2})\.(\d{2})\.(\d{2})$/.exec(String(value || "").trim());
+        if (!m) return false;
+        const day = Number(m[1]);
+        const month = Number(m[2]);
+        return month >= 1 && month <= 12 && day >= 1 && day <= 31;
+      }
+
+      function getMonthFromInvoiceDate(value) {
+        const s = String(value || "").trim();
+        const m1 = /^\d{2}\.(\d{2})\.\d{2}$/.exec(s);
+        if (m1) return m1[1];
+        return "";
+      }
+
+      function getMonthFromPaymentDate(value) {
+        const s = String(value || "").trim();
+        const m1 = /^\d{2}\.(\d{2})$/.exec(s);
+        if (m1) return m1[1];
+        const m2 = /^\d{4}-(\d{2})-\d{2}$/.exec(s);
+        if (m2) return m2[1];
+        return "";
+      }
+
+      function amountToNumber(value) {
+        const digits = String(value || "").replace(/[^\d]/g, "");
+        return digits ? Number(digits) : 0;
+      }
+
+      function todayDayMonthYearShort() {
+        const d = new Date();
+        const dd = String(d.getDate()).padStart(2, "0");
+        const mm = String(d.getMonth() + 1).padStart(2, "0");
+        const yy = String(d.getFullYear() % 100).padStart(2, "0");
+        return `${dd}.${mm}.${yy}`;
+      }
+
+      function toDayMonthYearShortFromPaymentDate(paymentDate) {
+        const s = String(paymentDate || "").trim();
+        const m = /^(\d{2})\.(\d{2})$/.exec(s);
+        if (m) {
+          const yy = String(new Date().getFullYear() % 100).padStart(2, "0");
+          return `${m[1]}.${m[2]}.${yy}`;
+        }
+        return todayDayMonthYearShort();
+      }
+
+      function isPaymentDateOverdue(paymentDate) {
+        const s0 = String(paymentDate || "").trim();
+        // нормализация: 03/02, 3.2, "03.02." → "03.02"
+        const s = s0
+          .replace(/\s+/g, "")
+          .replace(/\//g, ".")
+          .replace(/\.+$/g, "");
+        const now = new Date();
+        const todayMmdd = (now.getMonth() + 1) * 100 + now.getDate();
+
+        // формат ДД.ММ
+        const mDm = /^(\d{1,2})\.(\d{1,2})$/.exec(s);
+        if (mDm) {
+          const dd = Number(mDm[1]);
+          const mm = Number(mDm[2]);
+          if (!(mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31)) return false;
+          const dueMmdd = mm * 100 + dd;
+          return dueMmdd < todayMmdd;
+        }
+
+        // формат ГГГГ-ММ-ДД
+        const mYmd = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+        if (mYmd) {
+          const yyyy = Number(mYmd[1]);
+          const mm = Number(mYmd[2]);
+          const dd = Number(mYmd[3]);
+          if (!(yyyy >= 2000 && yyyy <= 2100 && mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31)) return false;
+          const todayYmd = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+          return `${yyyy}-${String(mm).padStart(2, "0")}-${String(dd).padStart(2, "0")}` < todayYmd;
+        }
+
+        return false;
+      }
+
+      async function setSelectedDay(ymd) {
+        const v = String(ymd || "").trim();
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return;
+        state.selectedDay = v;
+        if (state.profileId) {
+          localStorage.setItem(dayStorageKey(state.profileId), JSON.stringify(v));
+        }
+        $("day").value = v;
+        if (useRemote && state.profileId) {
+          state.tasks = [];
+          render();
+          refreshTasksFromRemote();
+        } else {
+          ensureLocalRolloverApplied();
+          render();
+        }
+      }
+
+      function sortOpen(tasks) {
+        return tasks
+          .filter((t) => !t.done)
+          .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+      }
+
+      function sortDone(tasks) {
+        return tasks
+          .filter((t) => t.done)
+          .sort((a, b) => {
+            const ad = a.doneAt || a.createdAt;
+            const bd = b.doneAt || b.createdAt;
+            return String(bd).localeCompare(String(ad));
+          });
+      }
+
+      function latestActivityIso(tasks) {
+        let best = "";
+        for (const t of tasks) {
+          const cand = t.done ? t.doneAt || t.createdAt : t.createdAt;
+          if (!best || String(cand).localeCompare(String(best)) > 0) best = cand;
+        }
+        return best;
+      }
+
+      function updateMeta() {
+        const p = profileById(state.profileId);
+        const visible = state.tasks.filter((t) => t.day === state.selectedDay);
+        const total = visible.length;
+        const done = visible.filter((t) => t.done).length;
+        const open = total - done;
+        $("count").textContent = `Открыто: ${open} • Закрыто: ${done} • Всего: ${total}`;
+        const latest = latestActivityIso(visible);
+        const who = p ? p.name : "не выбран";
+        const mode =
+          state.profileId && isMainProfile(state.profileId) ? " • Режим: все сотрудники" : "";
+        let sync = useRemote ? " • Синхронизация: облако" : " • Синхронизация: локально";
+        if (useRemote && (isRemoteLoading || isPaymentsLoading || isInvoicesLoading)) {
+          sync += " • загрузка…";
+        }
+        if (remoteSyncWarning && useRemote) {
+          sync += " • нет ответа сервера — повторите позже";
+        }
+        $("meta").textContent =
+          `${who} • День: ${state.selectedDay}${mode}${sync}` + (latest ? ` • Последнее изменение: ${fmtDateTime(latest)}` : "");
+      }
+
+      function buildTaskRow(t, opts) {
+        opts = opts || {};
+        const hideOwnerRow = Boolean(opts.hideOwnerRow);
+
+        const li = document.createElement("li");
+        li.className = "item" + (t.done ? " done" : "");
+        li.dataset.id = t.id;
+
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.className = "check";
+        cb.checked = t.done;
+        cb.ariaLabel = t.done ? "Отметить как невыполненную" : "Отметить как выполненную";
+        cb.addEventListener("change", async () => {
+          const task = state.tasks.find((x) => x.id === t.id);
+          if (!task) return;
+          if (cb.checked) {
+            // Require a comment to close
+            cb.checked = false;
+            openCommentModal(task.id);
+            return;
+          }
+          // reopening task: no comment required
+          task.done = false;
+          task.doneAt = null;
+          task.doneComment = "";
+          await persistTaskUpdate(task);
+        });
+
+        const col = document.createElement("div");
+        if (!hideOwnerRow && state.profileId && isMainProfile(state.profileId) && t.ownerId) {
+          const owner = profileById(t.ownerId);
+          if (owner) {
+            const ownerEl = document.createElement("div");
+            ownerEl.className = "taskOwner";
+            ownerEl.textContent = owner.name;
+            col.appendChild(ownerEl);
+          }
+        }
+        const text = document.createElement("div");
+        text.className = "text";
+        text.textContent = t.text;
+        col.appendChild(text);
+
+        if (t.done && t.doneComment && String(t.doneComment).trim().length > 0) {
+          const c = document.createElement("div");
+          c.className = "taskComment";
+          c.textContent = t.doneComment;
+          col.appendChild(c);
+        }
+
+        const actions = document.createElement("div");
+        actions.className = "taskActions";
+        const editBtn = document.createElement("button");
+        editBtn.type = "button";
+        editBtn.className = "btn btnSecondary btnSm";
+        editBtn.textContent = "Изменить";
+        editBtn.setAttribute("aria-label", "Редактировать задачу");
+        editBtn.addEventListener("click", () => openEditTaskModal(t.id));
+        actions.appendChild(editBtn);
+        if (isTaskOverdueByRollover(t)) {
+          const tag = document.createElement("span");
+          tag.className = "taskOverdueTag";
+          tag.textContent = "Просрочена";
+          actions.appendChild(tag);
+        }
+        col.appendChild(actions);
+
+        li.appendChild(cb);
+        li.appendChild(col);
+        return li;
+      }
+
+      const profileIdsKnown = new Set(PROFILES.map((p) => p.id));
+
+      /** Для главного профиля: блоки по сотруднику (порядок как в PROFILES). */
+      function appendTasksGroupedByProfile(hostEl, tasks) {
+        hostEl.innerHTML = "";
+        const unknown = tasks.filter((t) => !t.ownerId || !profileIdsKnown.has(t.ownerId));
+
+        for (const p of profilesMainFirst()) {
+          const group = tasks.filter((t) => t.ownerId === p.id);
+          if (!group.length) continue;
+          const section = document.createElement("section");
+          section.className = "taskProfileBlock";
+          const h = document.createElement("h3");
+          h.className = "taskProfileBlockHead";
+          h.textContent = p.name;
+          section.appendChild(h);
+          const ul = document.createElement("ul");
+          ul.className = "list";
+          for (const t of group) {
+            ul.appendChild(buildTaskRow(t, { hideOwnerRow: true }));
+          }
+          section.appendChild(ul);
+          hostEl.appendChild(section);
+        }
+
+        if (unknown.length) {
+          const section = document.createElement("section");
+          section.className = "taskProfileBlock";
+          const h = document.createElement("h3");
+          h.className = "taskProfileBlockHead";
+          h.textContent = "Другие задачи";
+          section.appendChild(h);
+          const ul = document.createElement("ul");
+          ul.className = "list";
+          for (const t of unknown) {
+            ul.appendChild(buildTaskRow(t, { hideOwnerRow: false }));
+          }
+          section.appendChild(ul);
+          hostEl.appendChild(section);
+        }
+      }
+
+      /** Для обычных профилей: блоки по постановщику (creatorId). */
+      function appendTasksGroupedByCreator(hostEl, tasks) {
+        hostEl.innerHTML = "";
+        const order = profilesMainFirst();
+        const known = new Set(order.map((p) => p.id));
+        const unknown = tasks.filter((t) => !t.creatorId || !known.has(t.creatorId));
+
+        for (const p of order) {
+          const group = tasks.filter((t) => t.creatorId === p.id);
+          if (!group.length) continue;
+          const section = document.createElement("section");
+          section.className = "taskProfileBlock";
+          const h = document.createElement("h3");
+          h.className = "taskProfileBlockHead";
+          h.textContent = p.name;
+          section.appendChild(h);
+          const ul = document.createElement("ul");
+          ul.className = "list";
+          for (const t of group) {
+            ul.appendChild(buildTaskRow(t));
+          }
+          section.appendChild(ul);
+          hostEl.appendChild(section);
+        }
+
+        if (unknown.length) {
+          const section = document.createElement("section");
+          section.className = "taskProfileBlock";
+          const h = document.createElement("h3");
+          h.className = "taskProfileBlockHead";
+          h.textContent = "Другие";
+          section.appendChild(h);
+          const ul = document.createElement("ul");
+          ul.className = "list";
+          for (const t of unknown) {
+            ul.appendChild(buildTaskRow(t));
+          }
+          section.appendChild(ul);
+          hostEl.appendChild(section);
+        }
+      }
+
+      function render() {
+        const openRoot = $("openTasksRoot");
+        const doneRoot = $("doneTasksRoot");
+        const doneLabel = $("doneLabel");
+        openRoot.innerHTML = "";
+        doneRoot.innerHTML = "";
+
+        let visible = state.tasks.filter((t) => t.day === state.selectedDay);
+        if (isMainProfile(state.profileId) && Array.isArray(state.tasksProfilesFilter) && state.tasksProfilesFilter.length) {
+          const allow = new Set(state.tasksProfilesFilter);
+          visible = visible.filter((t) => allow.has(t.ownerId));
+        }
+        const openTasks = sortOpen(visible);
+        const doneTasks = sortDone(visible);
+        const total = visible.length;
+
+        if (!state.profileId) {
+          $("empty").textContent = "Выберите профиль в шапке и введите пароль.";
+          $("empty").style.display = "";
+          openRoot.innerHTML = "";
+          doneRoot.innerHTML = "";
+          doneLabel.classList.remove("isVisible");
+          doneLabel.setAttribute("aria-hidden", "true");
+          updateMeta();
+          return;
+        }
+        $("empty").textContent = "Пока нет задач. Добавьте первую задачу выше.";
+        $("empty").style.display = total ? "none" : "";
+
+        const showDoneHeading = doneTasks.length > 0;
+        doneLabel.classList.toggle("isVisible", showDoneHeading);
+        doneLabel.setAttribute("aria-hidden", showDoneHeading ? "false" : "true");
+
+        if (isMainProfile(state.profileId)) {
+          appendTasksGroupedByProfile(openRoot, openTasks);
+          appendTasksGroupedByProfile(doneRoot, doneTasks);
+        } else {
+          appendTasksGroupedByCreator(openRoot, openTasks);
+          appendTasksGroupedByCreator(doneRoot, doneTasks);
+        }
+
+        updateMeta();
+      }
+
+      function renderPayments() {
+        const host = $("paymentsRoot");
+        const emptyEl = $("paymentsEmpty");
+        const modeMeta = $("paymentsModeMeta");
+        const analyticsEl = $("paymentsAnalytics");
+        host.innerHTML = "";
+        analyticsEl.innerHTML = "";
+        if (!state.profileId) {
+          modeMeta.textContent = "Режим: профиль не выбран";
+          emptyEl.textContent = "Выберите профиль в шапке и введите пароль.";
+          emptyEl.style.display = "";
+          updateMeta();
+          return;
+        }
+        modeMeta.textContent = isMainProfile(state.profileId) ? "Режим: все сотрудники" : "Режим: мой профиль";
+        if (useRemote && isPaymentsLoading) modeMeta.textContent += " • загрузка…";
+        if (useRemote && remoteSyncWarning) modeMeta.textContent += " • нет ответа сервера";
+
+        let visibleBase = state.payments;
+        if (isMainProfile(state.profileId) && Array.isArray(state.paymentsProfilesFilter) && state.paymentsProfilesFilter.length) {
+          const allow = new Set(state.paymentsProfilesFilter);
+          visibleBase = visibleBase.filter((x) => allow.has(x.ownerId));
+        }
+        const visibleByMonth = visibleBase.filter((x) => {
+          if (state.paymentsMonthFilter === "all") return true;
+          return getMonthFromPaymentDate(x.paymentDate) === state.paymentsMonthFilter;
+        });
+        const visible = [...visibleByMonth].sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)));
+        emptyEl.textContent = "Пока нет позиций.";
+        emptyEl.style.display = visible.length ? "none" : "";
+
+        let totalSum = 0;
+        for (const section of PAYMENT_SECTIONS) {
+          const sum = visible
+            .filter((x) => x.section === section.id)
+            .reduce((acc, x) => acc + amountToNumber(x.amount), 0);
+          totalSum += sum;
+          const kpi = document.createElement("div");
+          kpi.className = "paymentsKpi";
+          const kpiLabel = document.createElement("div");
+          kpiLabel.className = "paymentsKpiLabel";
+          kpiLabel.textContent = section.name;
+          const kpiValue = document.createElement("div");
+          kpiValue.className = "paymentsKpiValue";
+          kpiValue.textContent = formatAmountRub(String(sum));
+          kpi.appendChild(kpiLabel);
+          kpi.appendChild(kpiValue);
+          analyticsEl.appendChild(kpi);
+        }
+        const totalKpi = document.createElement("div");
+        totalKpi.className = "paymentsKpi";
+        const totalLabel = document.createElement("div");
+        totalLabel.className = "paymentsKpiLabel";
+        totalLabel.textContent = "Итого";
+        const totalValue = document.createElement("div");
+        totalValue.className = "paymentsKpiValue";
+        totalValue.textContent = formatAmountRub(String(totalSum));
+        totalKpi.appendChild(totalLabel);
+        totalKpi.appendChild(totalValue);
+        analyticsEl.appendChild(totalKpi);
+
+        for (const section of PAYMENT_SECTIONS) {
+          const col = document.createElement("section");
+          col.className = "paymentsColumn";
+          const h = document.createElement("h3");
+          h.className = "paymentsColumnTitle";
+          h.textContent = section.name;
+          col.appendChild(h);
+          const list = document.createElement("ol");
+          list.className = "paymentsList";
+          const items = visible.filter((x) => x.section === section.id);
+          const itemsAll = visibleBase.filter((x) => x.section === section.id);
+          for (const item of items) {
+            const li = document.createElement("li");
+            li.className = "paymentItem";
+            if (item.paid) li.classList.add("paymentItemPaid");
+            if (!item.paid) li.classList.add("paymentItemOverdue");
+            const company = document.createElement("div");
+            company.className = "paymentCompany";
+            company.textContent = item.companyName;
+            li.appendChild(company);
+            const meta = document.createElement("div");
+            meta.className = "paymentMeta";
+            meta.textContent = `Сумма: ${item.amount || "—"} • Примерная дата: ${item.paymentDate ? fmtDayMonth(item.paymentDate) : "—"}`;
+            li.appendChild(meta);
+            if (isMainProfile(state.profileId) && item.ownerId) {
+              const owner = profileById(item.ownerId);
+              if (owner) {
+                const ownerEl = document.createElement("div");
+                ownerEl.className = "paymentOwner";
+                ownerEl.textContent = owner.name;
+                li.appendChild(ownerEl);
+              }
+            }
+            const actions = document.createElement("div");
+            actions.className = "paymentActions";
+            const paidWrap = document.createElement("div");
+            paidWrap.style.display = "inline-flex";
+            paidWrap.style.alignItems = "center";
+            paidWrap.style.gap = "6px";
+            const paidLabel = document.createElement("span");
+            paidLabel.className = "meta";
+            paidLabel.textContent = "Оплачен";
+            paidWrap.appendChild(paidLabel);
+            const paidSelect = document.createElement("select");
+            paidSelect.className = "input inputSm";
+            paidSelect.setAttribute("aria-label", "Оплачен");
+            const paidNo = document.createElement("option");
+            paidNo.value = "0";
+            paidNo.textContent = "Нет";
+            const paidYes = document.createElement("option");
+            paidYes.value = "1";
+            paidYes.textContent = "Да";
+            paidSelect.appendChild(paidNo);
+            paidSelect.appendChild(paidYes);
+            paidSelect.value = item.paid ? "1" : "0";
+            paidSelect.addEventListener("change", () => setPaymentPaidFlag(item.id, paidSelect.value === "1"));
+            paidWrap.appendChild(paidSelect);
+            actions.appendChild(paidWrap);
+            if (section.id === "implementation") {
+              const updWrap = document.createElement("div");
+              updWrap.style.display = "inline-flex";
+              updWrap.style.alignItems = "center";
+              updWrap.style.gap = "6px";
+
+              const updLabel = document.createElement("span");
+              updLabel.className = "meta";
+              updLabel.textContent = "УПД";
+              updWrap.appendChild(updLabel);
+
+              const updSelect = document.createElement("select");
+              updSelect.className = "input inputSm";
+              updSelect.setAttribute("aria-label", "УПД");
+              const optNo = document.createElement("option");
+              optNo.value = "0";
+              optNo.textContent = "нет";
+              const optYes = document.createElement("option");
+              optYes.value = "1";
+              optYes.textContent = "да";
+              updSelect.appendChild(optNo);
+              updSelect.appendChild(optYes);
+              updSelect.value = item.upd ? "1" : "0";
+              updSelect.addEventListener("change", () => setPaymentUpdFlag(item.id, updSelect.value === "1"));
+              updWrap.appendChild(updSelect);
+
+              actions.appendChild(updWrap);
+            }
+            const editBtn = document.createElement("button");
+            editBtn.type = "button";
+            editBtn.className = "btn btnSecondary btnSm";
+            editBtn.textContent = "Изменить";
+            editBtn.addEventListener("click", () => openEditPaymentModal(item.id));
+            actions.appendChild(editBtn);
+            li.appendChild(actions);
+            list.appendChild(li);
+          }
+          col.appendChild(list);
+          // аналитика по колонке
+          const paidSum = itemsAll.filter((x) => x.paid).reduce((acc, x) => acc + amountToNumber(x.amount), 0);
+          const unpaidSum = itemsAll.filter((x) => !x.paid).reduce((acc, x) => acc + amountToNumber(x.amount), 0);
+          const analytics = document.createElement("div");
+          analytics.className = "paymentsColumnAnalytics";
+          const r1 = document.createElement("div");
+          r1.className = "paymentsColumnAnalyticsRow";
+          r1.innerHTML = `<span>Оплачено (Да)</span><strong>${formatAmountRub(String(paidSum))}</strong>`;
+          const r2 = document.createElement("div");
+          r2.className = "paymentsColumnAnalyticsRow";
+          r2.innerHTML = `<span>Не оплачено (Нет)</span><strong>${formatAmountRub(String(unpaidSum))}</strong>`;
+          analytics.appendChild(r1);
+          analytics.appendChild(r2);
+          col.appendChild(analytics);
+          host.appendChild(col);
+        }
+        updateMeta();
+      }
+
+      function renderInvoices() {
+        const host = $("invoicesRoot");
+        const emptyEl = $("invoicesEmpty");
+        const modeMeta = $("invoicesModeMeta");
+        const analyticsEl = $("invoicesAnalytics");
+        host.innerHTML = "";
+        analyticsEl.innerHTML = "";
+        if (!state.profileId) {
+          modeMeta.textContent = "Режим: профиль не выбран";
+          emptyEl.textContent = "Выберите профиль в шапке и введите пароль.";
+          emptyEl.style.display = "";
+          updateMeta();
+          return;
+        }
+        modeMeta.textContent = isMainProfile(state.profileId) ? "Режим: все сотрудники" : "Режим: мой профиль";
+        if (useRemote && isInvoicesLoading) modeMeta.textContent += " • загрузка…";
+        if (useRemote && remoteSyncWarning) modeMeta.textContent += " • нет ответа сервера";
+
+        let visibleBase = state.invoices;
+        if (isMainProfile(state.profileId) && Array.isArray(state.invoicesProfilesFilter) && state.invoicesProfilesFilter.length) {
+          const allow = new Set(state.invoicesProfilesFilter);
+          visibleBase = visibleBase.filter((x) => allow.has(x.ownerId));
+        }
+        // "Закрыто: Да" скрываем из списка
+        visibleBase = visibleBase.filter((x) => !x.paid);
+        const visible = [...visibleBase].sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)));
+        emptyEl.textContent = "Пока нет позиций.";
+        emptyEl.style.display = visible.length ? "none" : "";
+
+        let totalSum = 0;
+        for (const section of PAYMENT_SECTIONS) {
+          const sum = visible
+            .filter((x) => x.section === section.id)
+            .reduce((acc, x) => acc + amountToNumber(x.amount), 0);
+          totalSum += sum;
+          const kpi = document.createElement("div");
+          kpi.className = "paymentsKpi";
+          const kpiLabel = document.createElement("div");
+          kpiLabel.className = "paymentsKpiLabel";
+          kpiLabel.textContent = section.name;
+          const kpiValue = document.createElement("div");
+          kpiValue.className = "paymentsKpiValue";
+          kpiValue.textContent = formatAmountRub(String(sum));
+          kpi.appendChild(kpiLabel);
+          kpi.appendChild(kpiValue);
+          analyticsEl.appendChild(kpi);
+        }
+        const totalKpi = document.createElement("div");
+        totalKpi.className = "paymentsKpi";
+        const totalLabel = document.createElement("div");
+        totalLabel.className = "paymentsKpiLabel";
+        totalLabel.textContent = "Итого";
+        const totalValue = document.createElement("div");
+        totalValue.className = "paymentsKpiValue";
+        totalValue.textContent = formatAmountRub(String(totalSum));
+        totalKpi.appendChild(totalLabel);
+        totalKpi.appendChild(totalValue);
+        analyticsEl.appendChild(totalKpi);
+
+        for (const section of PAYMENT_SECTIONS) {
+          const col = document.createElement("section");
+          col.className = "paymentsColumn";
+          const h = document.createElement("h3");
+          h.className = "paymentsColumnTitle";
+          h.textContent = section.name;
+          col.appendChild(h);
+          const list = document.createElement("ol");
+          list.className = "paymentsList";
+          const items = visible.filter((x) => x.section === section.id);
+          const itemsAll = visibleBase.filter((x) => x.section === section.id);
+          for (const item of items) {
+            const li = document.createElement("li");
+            li.className = "paymentItem";
+            if (item.paid) li.classList.add("paymentItemClosed");
+            const company = document.createElement("div");
+            company.className = "paymentCompany";
+            company.textContent = item.companyName;
+            li.appendChild(company);
+            const meta = document.createElement("div");
+            meta.className = "paymentMeta";
+            const isUpd = section.id === "implementation" && state.payments.some((p) => p && p.upd && p.updInvoiceId && p.updInvoiceId === item.id);
+            meta.textContent = `Сумма: ${item.amount || "—"} • Дата: ${item.invoiceDate || "—"}${isUpd ? " • УПД: да" : ""}${item.paid ? " • Закрыто: Да" : ""}`;
+            li.appendChild(meta);
+            if (isMainProfile(state.profileId) && item.ownerId) {
+              const owner = profileById(item.ownerId);
+              if (owner) {
+                const ownerEl = document.createElement("div");
+                ownerEl.className = "paymentOwner";
+                ownerEl.textContent = owner.name;
+                li.appendChild(ownerEl);
+              }
+            }
+            const actions = document.createElement("div");
+            actions.className = "paymentActions";
+            const paidWrap = document.createElement("div");
+            paidWrap.style.display = "inline-flex";
+            paidWrap.style.alignItems = "center";
+            paidWrap.style.gap = "6px";
+            const paidLabel = document.createElement("span");
+            paidLabel.className = "meta";
+            paidLabel.textContent = "Закрыто";
+            paidWrap.appendChild(paidLabel);
+            const paidSelect = document.createElement("select");
+            paidSelect.className = "input inputSm";
+            paidSelect.setAttribute("aria-label", "Закрыто");
+            const optNo = document.createElement("option");
+            optNo.value = "0";
+            optNo.textContent = "Нет";
+            const optYes = document.createElement("option");
+            optYes.value = "1";
+            optYes.textContent = "Да";
+            paidSelect.appendChild(optNo);
+            paidSelect.appendChild(optYes);
+            paidSelect.value = item.paid ? "1" : "0";
+            paidSelect.addEventListener("change", () => setInvoicePaidFlag(item.id, paidSelect.value === "1"));
+            paidWrap.appendChild(paidSelect);
+            actions.appendChild(paidWrap);
+            const editBtn = document.createElement("button");
+            editBtn.type = "button";
+            editBtn.className = "btn btnSecondary btnSm";
+            editBtn.textContent = "Изменить";
+            editBtn.addEventListener("click", () => openEditInvoiceModal(item.id));
+            actions.appendChild(editBtn);
+            li.appendChild(actions);
+            list.appendChild(li);
+          }
+          col.appendChild(list);
+          // аналитика по колонке (закрыто/не закрыто)
+          const closedSum = itemsAll.filter((x) => x.paid).reduce((acc, x) => acc + amountToNumber(x.amount), 0);
+          const openSum = itemsAll.filter((x) => !x.paid).reduce((acc, x) => acc + amountToNumber(x.amount), 0);
+          const analytics = document.createElement("div");
+          analytics.className = "paymentsColumnAnalytics";
+          const r1 = document.createElement("div");
+          r1.className = "paymentsColumnAnalyticsRow";
+          r1.innerHTML = `<span>Закрыто (Да)</span><strong>${formatAmountRub(String(closedSum))}</strong>`;
+          const r2 = document.createElement("div");
+          r2.className = "paymentsColumnAnalyticsRow";
+          r2.innerHTML = `<span>Не закрыто (Нет)</span><strong>${formatAmountRub(String(openSum))}</strong>`;
+          analytics.appendChild(r1);
+          analytics.appendChild(r2);
+          col.appendChild(analytics);
+          host.appendChild(col);
+        }
+        updateMeta();
+      }
+
+      async function addTask(rawText, ownerIdOverride) {
+        if (!state.profileId) return false;
+        const text = String(rawText || "").trim();
+        if (!text) return false;
+
+        const ownerId = ownerIdOverride && isMainProfile(state.profileId) ? String(ownerIdOverride) : state.profileId;
+        const creatorId = state.profileId;
+
+        const task = {
+          id: crypto.randomUUID(),
+          text,
+          done: false,
+          day: state.selectedDay,
+          createdAt: nowIso(),
+          doneAt: null,
+          doneComment: "",
+          creatorId,
+        };
+        if (useRemote) {
+          try {
+            const taskWithOwner = { ...task, ownerId };
+            if (!state.tasks.some((x) => x.id === task.id)) {
+              state.tasks = state.tasks.concat([taskWithOwner]);
+            }
+            render();
+
+            const r = await fetch("/api/tasks", {
+              ...API_FETCH_INIT,
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                upsert: true,
+                task: {
+                  id: task.id,
+                  owner_profile_id: ownerId,
+                  creator_profile_id: creatorId,
+                  text: task.text,
+                  day: task.day,
+                  done: task.done,
+                  created_at: task.createdAt,
+                  done_at: task.doneAt,
+                  done_comment: task.doneComment,
+                },
+              }),
+            });
+            if (!r.ok) throw new Error();
+            refreshTasksFromRemote();
+            return true;
+          } catch {
+            if (preferLocalStorageFallback()) {
+              useRemote = false;
+            } else {
+              remoteSyncWarning = true;
+              render();
+              return false;
+            }
+          }
+        }
+        const list = loadTasksForProfile(ownerId);
+        list.push(task);
+        saveTasksToProfile(ownerId, list);
+        state.tasks = loadTasksForView(state.profileId);
+        render();
+        return true;
+      }
+
+      $("form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (!state.profileId) return;
+        const input = $("taskText");
+        const assigneeEl = $("taskAssignee");
+        const raw = input.value;
+        const text = String(raw || "").trim();
+        if (!text) {
+          input.value = "";
+          input.focus();
+          return;
+        }
+
+        // UX: очищаем поле сразу (не ждём сеть/рендер)
+        input.value = "";
+        input.focus();
+
+        const ownerIdOverride = isMainProfile(state.profileId) && assigneeEl ? assigneeEl.value : "";
+        if (isMainProfile(state.profileId) && ownerIdOverride) {
+          storageSet(STORAGE_TASK_ASSIGNEE, ownerIdOverride);
+        }
+        const ok = await addTask(text, ownerIdOverride);
+        if (!ok) {
+          // если не удалось (например, сервер недоступен и fallback выключен) — вернём текст обратно
+          input.value = raw;
+          input.focus();
+        }
+      });
+
+      $("clearDone").addEventListener("click", async () => {
+        if (!state.profileId) return;
+        if (useRemote) {
+          try {
+            const body = isMainProfile(state.profileId)
+              ? { deleteCompleted: true, scope: "all" }
+              : { deleteCompleted: true, scope: "profile", profileId: state.profileId };
+            const r = await fetch("/api/tasks", {
+              ...API_FETCH_INIT,
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(body),
+            });
+            if (!r.ok) throw new Error();
+            refreshTasksFromRemote();
+          } catch {
+            if (preferLocalStorageFallback()) {
+              useRemote = false;
+              if (isMainProfile(state.profileId)) {
+                for (const p of PROFILES) {
+                  const list = loadTasksForProfile(p.id);
+                  const filtered = list.filter((t) => !t.done);
+                  if (filtered.length !== list.length) saveTasksToProfile(p.id, filtered);
+                }
+              } else {
+                const list = loadTasksForProfile(state.profileId).filter((t) => !t.done);
+                saveTasksToProfile(state.profileId, list);
+              }
+              state.tasks = loadTasksForView(state.profileId);
+            } else {
+              useRemote = true;
+              remoteSyncWarning = true;
+            }
+            render();
+          }
+          return;
+        }
+        if (isMainProfile(state.profileId)) {
+          for (const p of PROFILES) {
+            const list = loadTasksForProfile(p.id);
+            const filtered = list.filter((t) => !t.done);
+            if (filtered.length !== list.length) saveTasksToProfile(p.id, filtered);
+          }
+        } else {
+          const list = loadTasksForProfile(state.profileId).filter((t) => !t.done);
+          saveTasksToProfile(state.profileId, list);
+        }
+        state.tasks = loadTasksForView(state.profileId);
+        render();
+      });
+
+      $("day").addEventListener("change", () => setSelectedDay($("day").value));
+      $("today").addEventListener("click", () => setSelectedDay(todayYmd()));
+      $("goTasks").addEventListener("click", () => setActiveView("tasks"));
+      $("goPayments").addEventListener("click", () => setActiveView("payments"));
+      $("goInvoices").addEventListener("click", () => setActiveView("invoices"));
+      $("tasksProfilesBtn").addEventListener("click", () => {
+        toggleTasksProfilesMenu();
+      });
+      $("tasksProfilesMenu").addEventListener("click", (e) => {
+        const t = e.target;
+        if (!t || t.tagName !== "INPUT" || t.type !== "checkbox") return;
+        const id = String(t.dataset.id || "");
+        const allIds = PROFILES.map((p) => p.id);
+        const selected = new Set(state.tasksProfilesFilter || []);
+
+        if (id === "__all__") {
+          if (t.checked) {
+            setTasksProfilesFilter(allIds);
+          } else {
+            if (selected.size === 0) setTasksProfilesFilter(allIds);
+            else setTasksProfilesFilter(Array.from(selected));
+          }
+          return;
+        }
+
+        if (t.checked) selected.add(id);
+        else selected.delete(id);
+
+        if (selected.size === 0) setTasksProfilesFilter(allIds);
+        else setTasksProfilesFilter(Array.from(selected));
+      });
+      document.addEventListener("click", (e) => {
+        const wrap = $("tasksProfilesFilterWrap");
+        const menu = $("tasksProfilesMenu");
+        if (!menu.classList.contains("open")) return;
+        if (wrap.contains(e.target)) return;
+        toggleTasksProfilesMenu(false);
+      });
+      $("paymentsMonthFilter").addEventListener("change", () => {
+        state.paymentsMonthFilter = $("paymentsMonthFilter").value || "all";
+        renderPayments();
+      });
+      $("paymentsProfilesBtn").addEventListener("click", () => {
+        togglePaymentsProfilesMenu();
+      });
+      $("paymentsProfilesMenu").addEventListener("click", (e) => {
+        const t = e.target;
+        if (!t || t.tagName !== "INPUT" || t.type !== "checkbox") return;
+        const id = String(t.dataset.id || "");
+        const allIds = PROFILES.map((p) => p.id);
+        const selected = new Set(state.paymentsProfilesFilter || []);
+
+        if (id === "__all__") {
+          if (t.checked) {
+            setPaymentsProfilesFilter(allIds);
+          } else {
+            // if "Все" is unchecked - keep current selection as-is (but ensure at least one)
+            if (selected.size === 0) setPaymentsProfilesFilter(allIds);
+            else setPaymentsProfilesFilter(Array.from(selected));
+          }
+          return;
+        }
+
+        if (t.checked) selected.add(id);
+        else selected.delete(id);
+
+        if (selected.size === 0) {
+          // never allow empty selection -> fallback to all
+          setPaymentsProfilesFilter(allIds);
+        } else {
+          setPaymentsProfilesFilter(Array.from(selected));
+        }
+      });
+      document.addEventListener("click", (e) => {
+        const wrap = $("paymentsProfilesFilterWrap");
+        const menu = $("paymentsProfilesMenu");
+        if (!menu.classList.contains("open")) return;
+        if (wrap.contains(e.target)) return;
+        togglePaymentsProfilesMenu(false);
+      });
+      $("paymentsForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (!state.profileId) return;
+        $("paymentFormErr").textContent = "";
+        const section = String($("paymentSection").value || "");
+        const companyName = String($("paymentCompany").value || "").trim();
+        const amount = formatAmountRub($("paymentAmount").value);
+        const paymentDate = normalizeDayMonthInput($("paymentDate").value);
+        if (!PAYMENT_SECTIONS.some((s) => s.id === section)) {
+          $("paymentFormErr").textContent = "Выберите корректный раздел";
+          return;
+        }
+        if (companyName.length < 1) {
+          $("paymentFormErr").textContent = "Укажите название компании";
+          return;
+        }
+        if (!amount) {
+          $("paymentFormErr").textContent = "Сумма должна быть числом, например: 1 234 567 ₽";
+          return;
+        }
+        if (paymentDate && !isValidDayMonth(paymentDate)) {
+          $("paymentFormErr").textContent = "Дата должна быть в формате ДД.ММ";
+          return;
+        }
+        const ok = await addPayment({ section, companyName, amount, paymentDate });
+        if (ok) {
+          $("paymentCompany").value = "";
+          $("paymentAmount").value = "";
+          $("paymentDate").value = "";
+          $("paymentFormErr").textContent = "";
+        }
+      });
+      $("paymentAmount").addEventListener("blur", () => {
+        const v = formatAmountRub($("paymentAmount").value);
+        if (v) $("paymentAmount").value = v;
+      });
+      $("paymentAmount").addEventListener("input", () => {
+        applyAmountMaskOnInput($("paymentAmount"));
+      });
+      $("paymentDate").addEventListener("input", () => {
+        $("paymentDate").value = normalizeDayMonthInput($("paymentDate").value);
+      });
+
+      $("invoicesProfilesBtn").addEventListener("click", () => {
+        toggleInvoicesProfilesMenu();
+      });
+      $("invoicesProfilesMenu").addEventListener("click", (e) => {
+        const t = e.target;
+        if (!t || t.tagName !== "INPUT" || t.type !== "checkbox") return;
+        const id = String(t.dataset.id || "");
+        const allIds = PROFILES.map((p) => p.id);
+        const selected = new Set(state.invoicesProfilesFilter || []);
+
+        if (id === "__all__") {
+          if (t.checked) {
+            setInvoicesProfilesFilter(allIds);
+          } else {
+            if (selected.size === 0) setInvoicesProfilesFilter(allIds);
+            else setInvoicesProfilesFilter(Array.from(selected));
+          }
+          return;
+        }
+
+        if (t.checked) selected.add(id);
+        else selected.delete(id);
+
+        if (selected.size === 0) setInvoicesProfilesFilter(allIds);
+        else setInvoicesProfilesFilter(Array.from(selected));
+      });
+      document.addEventListener("click", (e) => {
+        const wrap = $("invoicesProfilesFilterWrap");
+        const menu = $("invoicesProfilesMenu");
+        if (!menu.classList.contains("open")) return;
+        if (wrap.contains(e.target)) return;
+        toggleInvoicesProfilesMenu(false);
+      });
+      $("invoicesForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (!state.profileId) return;
+        $("invoiceFormErr").textContent = "";
+        const section = String($("invoiceSection").value || "");
+        const companyName = String($("invoiceCompany").value || "").trim();
+        const amount = formatAmountRub($("invoiceAmount").value);
+        const invoiceDate = normalizeDayMonthYearInput($("invoiceDate").value);
+        if (!PAYMENT_SECTIONS.some((s) => s.id === section)) {
+          $("invoiceFormErr").textContent = "Выберите корректный раздел";
+          return;
+        }
+        if (companyName.length < 1) {
+          $("invoiceFormErr").textContent = "Укажите название компании";
+          return;
+        }
+        if (!amount) {
+          $("invoiceFormErr").textContent = "Сумма должна быть числом, например: 1 234 567 ₽";
+          return;
+        }
+        if (!isValidDayMonthYear(invoiceDate)) {
+          $("invoiceFormErr").textContent = "Дата должна быть в формате ДД.ММ.ГГ";
+          return;
+        }
+        const ok = await addInvoice({ section, companyName, amount, invoiceDate });
+        if (ok) {
+          $("invoiceCompany").value = "";
+          $("invoiceAmount").value = "";
+          $("invoiceDate").value = "";
+          $("invoiceFormErr").textContent = "";
+        }
+      });
+      $("invoiceAmount").addEventListener("blur", () => {
+        const v = formatAmountRub($("invoiceAmount").value);
+        if (v) $("invoiceAmount").value = v;
+      });
+      $("invoiceAmount").addEventListener("input", () => {
+        applyAmountMaskOnInput($("invoiceAmount"));
+      });
+      $("invoiceDate").addEventListener("input", () => {
+        $("invoiceDate").value = normalizeDayMonthYearInput($("invoiceDate").value);
+      });
+
+      $("profileSelect").addEventListener("change", () => {
+        const next = $("profileSelect").value;
+        if (!next) {
+          syncProfileSelect();
+          return;
+        }
+        if (next === state.profileId) return;
+        pendingProfileId = next;
+        openPasswordModal();
+      });
+
+      $("pwdOk").addEventListener("click", tryConfirmPassword);
+      $("pwdCancel").addEventListener("click", closePasswordModal);
+      $("profilePassword").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") tryConfirmPassword();
+        if (e.key === "Escape") closePasswordModal();
+      });
+      $("passwordModal").addEventListener("click", (e) => {
+        if (e.target === $("passwordModal")) closePasswordModal();
+      });
+
+      $("cmtOk").addEventListener("click", confirmCloseWithComment);
+      $("cmtCancel").addEventListener("click", closeCommentModal);
+      $("taskCommentInput").addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) confirmCloseWithComment();
+        if (e.key === "Escape") closeCommentModal();
+      });
+      $("commentModal").addEventListener("click", (e) => {
+        if (e.target === $("commentModal")) closeCommentModal();
+      });
+
+      $("editTaskSave").addEventListener("click", saveEditTask);
+      $("editTaskCancel").addEventListener("click", closeEditTaskModal);
+      $("editTaskDelete").addEventListener("click", async () => {
+        const id = editingTaskId;
+        if (!id) return;
+        const ok = confirm("Удалить задачу безвозвратно?");
+        if (!ok) return;
+        closeEditTaskModal();
+        await deleteTaskById(id);
+      });
+      $("editTaskModal").addEventListener("click", (e) => {
+        if (e.target === $("editTaskModal")) closeEditTaskModal();
+      });
+      const onEditTaskKeydown = (e) => {
+        if (e.key === "Escape") closeEditTaskModal();
+      };
+      $("editTaskTextInput").addEventListener("keydown", onEditTaskKeydown);
+      $("editTaskResultInput").addEventListener("keydown", onEditTaskKeydown);
+
+      let editingPaymentId = null;
+      function openEditPaymentModal(paymentId) {
+        const item = state.payments.find((x) => x.id === paymentId);
+        if (!item) return;
+        editingPaymentId = paymentId;
+        $("editPaymentErr").textContent = "";
+        $("editPaymentSection").value = item.section || "implementation";
+        $("editPaymentCompany").value = item.companyName || "";
+        $("editPaymentAmount").value = item.amount || "";
+        $("editPaymentDate").value = item.paymentDate || "";
+        $("editPaymentModal").classList.add("open");
+        $("editPaymentModal").setAttribute("aria-hidden", "false");
+      }
+      function closeEditPaymentModal() {
+        editingPaymentId = null;
+        $("editPaymentModal").classList.remove("open");
+        $("editPaymentModal").setAttribute("aria-hidden", "true");
+        $("editPaymentErr").textContent = "";
+      }
+      async function saveEditPayment() {
+        const item = state.payments.find((x) => x.id === editingPaymentId);
+        if (!item) {
+          closeEditPaymentModal();
+          return;
+        }
+        const section = String($("editPaymentSection").value || "");
+        const companyName = String($("editPaymentCompany").value || "").trim();
+        const amount = formatAmountRub($("editPaymentAmount").value);
+        const paymentDate = String($("editPaymentDate").value || "").trim();
+        if (!PAYMENT_SECTIONS.some((s) => s.id === section)) {
+          $("editPaymentErr").textContent = "Выберите корректный раздел";
+          return;
+        }
+        if (companyName.length < 1) {
+          $("editPaymentErr").textContent = "Укажите название компании";
+          return;
+        }
+        if (!amount) {
+          $("editPaymentErr").textContent = "Укажите сумму оплаты";
+          return;
+        }
+        item.section = section;
+        item.companyName = companyName;
+        item.amount = amount;
+        item.paymentDate = paymentDate;
+        closeEditPaymentModal();
+        await persistPaymentUpdate(item);
+      }
+      async function confirmDeletePayment() {
+        const id = editingPaymentId;
+        if (!id) return;
+        closeEditPaymentModal();
+        await deletePaymentById(id);
+      }
+
+      $("editPaymentSave").addEventListener("click", saveEditPayment);
+      $("editPaymentCancel").addEventListener("click", closeEditPaymentModal);
+      $("editPaymentDelete").addEventListener("click", confirmDeletePayment);
+      $("editPaymentAmount").addEventListener("blur", () => {
+        const v = formatAmountRub($("editPaymentAmount").value);
+        if (v) $("editPaymentAmount").value = v;
+      });
+      $("editPaymentAmount").addEventListener("input", () => {
+        applyAmountMaskOnInput($("editPaymentAmount"));
+      });
+      $("editPaymentModal").addEventListener("click", (e) => {
+        if (e.target === $("editPaymentModal")) closeEditPaymentModal();
+      });
+
+      let editingInvoiceId = null;
+      function openEditInvoiceModal(invoiceId) {
+        const item = state.invoices.find((x) => x.id === invoiceId);
+        if (!item) return;
+        editingInvoiceId = invoiceId;
+        $("editInvoiceErr").textContent = "";
+        $("editInvoiceSection").value = item.section || "implementation";
+        $("editInvoiceCompany").value = item.companyName || "";
+        $("editInvoiceAmount").value = item.amount || "";
+        $("editInvoiceDate").value = item.invoiceDate || "";
+        $("editInvoiceModal").classList.add("open");
+        $("editInvoiceModal").setAttribute("aria-hidden", "false");
+      }
+      function closeEditInvoiceModal() {
+        editingInvoiceId = null;
+        $("editInvoiceModal").classList.remove("open");
+        $("editInvoiceModal").setAttribute("aria-hidden", "true");
+        $("editInvoiceErr").textContent = "";
+      }
+      async function saveEditInvoice() {
+        const item = state.invoices.find((x) => x.id === editingInvoiceId);
+        if (!item) {
+          closeEditInvoiceModal();
+          return;
+        }
+        const section = String($("editInvoiceSection").value || "");
+        const companyName = String($("editInvoiceCompany").value || "").trim();
+        const amount = formatAmountRub($("editInvoiceAmount").value);
+        const invoiceDate = normalizeDayMonthYearInput($("editInvoiceDate").value);
+        if (!PAYMENT_SECTIONS.some((s) => s.id === section)) {
+          $("editInvoiceErr").textContent = "Выберите корректный раздел";
+          return;
+        }
+        if (companyName.length < 1) {
+          $("editInvoiceErr").textContent = "Укажите название компании";
+          return;
+        }
+        if (!amount) {
+          $("editInvoiceErr").textContent = "Укажите сумму";
+          return;
+        }
+        if (!isValidDayMonthYear(invoiceDate)) {
+          $("editInvoiceErr").textContent = "Дата должна быть в формате ДД.ММ.ГГ";
+          return;
+        }
+        item.section = section;
+        item.companyName = companyName;
+        item.amount = amount;
+        item.invoiceDate = invoiceDate;
+        closeEditInvoiceModal();
+        await persistInvoiceUpdate(item);
+      }
+      async function confirmDeleteInvoice() {
+        const id = editingInvoiceId;
+        if (!id) return;
+        closeEditInvoiceModal();
+        await deleteInvoiceById(id);
+      }
+
+      $("editInvoiceSave").addEventListener("click", saveEditInvoice);
+      $("editInvoiceCancel").addEventListener("click", closeEditInvoiceModal);
+      $("editInvoiceDelete").addEventListener("click", confirmDeleteInvoice);
+      $("editInvoiceAmount").addEventListener("blur", () => {
+        const v = formatAmountRub($("editInvoiceAmount").value);
+        if (v) $("editInvoiceAmount").value = v;
+      });
+      $("editInvoiceAmount").addEventListener("input", () => {
+        applyAmountMaskOnInput($("editInvoiceAmount"));
+      });
+      $("editInvoiceDate").addEventListener("input", () => {
+        $("editInvoiceDate").value = normalizeDayMonthYearInput($("editInvoiceDate").value);
+      });
+      $("editInvoiceModal").addEventListener("click", (e) => {
+        if (e.target === $("editInvoiceModal")) closeEditInvoiceModal();
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key !== "Escape") return;
+        if ($("tasksProfilesMenu") && $("tasksProfilesMenu").classList.contains("open")) {
+          toggleTasksProfilesMenu(false);
+          return;
+        }
+        if ($("paymentsProfilesMenu") && $("paymentsProfilesMenu").classList.contains("open")) {
+          togglePaymentsProfilesMenu(false);
+          return;
+        }
+        if ($("invoicesProfilesMenu") && $("invoicesProfilesMenu").classList.contains("open")) {
+          toggleInvoicesProfilesMenu(false);
+          return;
+        }
+        if ($("editTaskModal").classList.contains("open")) {
+          closeEditTaskModal();
+          return;
+        }
+        if ($("commentModal").classList.contains("open")) {
+          closeCommentModal();
+          return;
+        }
+        if ($("passwordModal").classList.contains("open")) {
+          closePasswordModal();
+          return;
+        }
+        if ($("editPaymentModal").classList.contains("open")) {
+          closeEditPaymentModal();
+          return;
+        }
+        if ($("editInvoiceModal").classList.contains("open")) {
+          closeEditInvoiceModal();
+        }
+      });
+
+      (async function boot() {
+        fillProfileSelect();
+        syncProfileSelect();
+        applyActiveView();
+        $("day").value = state.selectedDay;
+        ensureLocalRolloverApplied();
+        state.payments = loadPaymentsForView(state.profileId);
+        state.paymentsProfilesFilter = loadPaymentsProfilesFilter();
+        syncPaymentsProfilesFilterUI();
+        state.invoices = loadInvoicesForView(state.profileId);
+        state.invoicesProfilesFilter = loadInvoicesProfilesFilter();
+        syncInvoicesProfilesFilterUI();
+        state.tasksProfilesFilter = loadTasksProfilesFilter();
+        syncTasksProfilesFilterUI();
+        render();
+        renderPayments();
+        renderInvoices();
+
+        // Не стартуем облачные запросы, пока профиль не выбран.
+        if (state.profileId) {
+          refreshTasksFromRemote();
+          refreshPaymentsFromRemote();
+          refreshInvoicesFromRemote();
+        }
+        if (state.profileId) $("taskText").focus();
+      })();
+    </script>
+  </body>
+</html>
